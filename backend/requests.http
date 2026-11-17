@@ -1,0 +1,138 @@
+# Meal Plan and Shopping List API: requests for the VS Code REST Client extension.
+# 1. Start the API (npm run dev, or the Floci app profile).
+# 2. Make tokens: npm run dev-token   and   npm run dev-token -- demo-user-2
+# 3. Paste them below, then click "Send Request" above a test, top to bottom.
+#    Copy the ids from the responses into the variables as you go.
+
+@baseUrl = http://localhost:3000
+@token = PASTE-TOKEN-FOR-demo-user-1
+@token2 = PASTE-TOKEN-FOR-demo-user-2
+@planId = PASTE-PLAN-ID
+@entryId = PASTE-ENTRY-ID
+@listId = PASTE-LIST-ID
+@itemId = PASTE-ITEM-ID
+
+### Health check (no token needed)
+GET {{baseUrl}}/api/health
+
+### My recipes (sample stand-in until the Recipe Library is merged)
+GET {{baseUrl}}/api/recipes?q=soup
+Authorization: Bearer {{token}}
+
+### Create a plan (any date: the API moves it to that week's Monday)
+POST {{baseUrl}}/api/mealplans
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "weekStart": "2026-11-18" }
+
+### Open the plan for a week
+GET {{baseUrl}}/api/mealplans?week=2026-11-16
+Authorization: Bearer {{token}}
+
+### Put a recipe in Monday dinner (copy @entryId from the response)
+POST {{baseUrl}}/api/mealplans/{{planId}}/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "recipeId": "rcp-koshari", "day": "mon", "meal": "dinner" }
+
+### Add two more recipes so the list has something to add up
+POST {{baseUrl}}/api/mealplans/{{planId}}/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "recipeId": "rcp-pancakes", "day": "sat", "meal": "breakfast" }
+
+###
+POST {{baseUrl}}/api/mealplans/{{planId}}/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "recipeId": "rcp-macarona-bechamel", "day": "sun", "meal": "lunch" }
+
+### Move an entry to another day/meal
+PATCH {{baseUrl}}/api/mealplans/{{planId}}/entries/{{entryId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "day": "fri", "meal": "lunch" }
+
+### Generate the shopping list (copy @listId and one item id)
+POST {{baseUrl}}/api/mealplans/{{planId}}/shoppinglist
+Authorization: Bearer {{token}}
+
+### Open the shopping list
+GET {{baseUrl}}/api/shoppinglists/{{listId}}
+Authorization: Bearer {{token}}
+
+### Tick an item off
+PATCH {{baseUrl}}/api/shoppinglists/{{listId}}/items/{{itemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "checked": true }
+
+### Edit an item
+PATCH {{baseUrl}}/api/shoppinglists/{{listId}}/items/{{itemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Red onion", "quantity": 4, "unit": "" }
+
+### Remove an entry
+DELETE {{baseUrl}}/api/mealplans/{{planId}}/entries/{{entryId}}
+Authorization: Bearer {{token}}
+
+### ---------- invalid ----------
+
+### 400: a date that does not exist
+POST {{baseUrl}}/api/mealplans
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "weekStart": "2026-02-30" }
+
+### 400: day not allowed
+POST {{baseUrl}}/api/mealplans/{{planId}}/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "recipeId": "rcp-koshari", "day": "funday", "meal": "lunch" }
+
+### 415: not JSON
+POST {{baseUrl}}/api/mealplans/{{planId}}/entries
+Authorization: Bearer {{token}}
+Content-Type: text/plain
+
+recipeId=rcp-koshari
+
+### ---------- security ----------
+
+### 401: no token
+GET {{baseUrl}}/api/mealplans?week=2026-11-16
+
+### 404: user 2 opens user 1's shopping list (IDOR)
+GET {{baseUrl}}/api/shoppinglists/{{listId}}
+Authorization: Bearer {{token2}}
+
+### 404: user 2 adds to user 1's plan (IDOR)
+POST {{baseUrl}}/api/mealplans/{{planId}}/entries
+Authorization: Bearer {{token2}}
+Content-Type: application/json
+
+{ "recipeId": "rcp-ful-medames", "day": "mon", "meal": "breakfast" }
+
+### 404: user 1 uses user 2's recipe
+POST {{baseUrl}}/api/mealplans/{{planId}}/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "recipeId": "rcp-ful-medames", "day": "mon", "meal": "breakfast" }
+
+### 400: script in an item name
+PATCH {{baseUrl}}/api/shoppinglists/{{listId}}/items/{{itemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "<script>alert(1)</script>" }
