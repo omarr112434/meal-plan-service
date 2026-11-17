@@ -1,0 +1,65 @@
+# Team 07 Recipe Organizer on Floci (a local copy of AWS). Run every command from the project
+# folder (the one with backend, frontend and infra), same as the lab guide:
+#
+#   Floci only:              docker compose -f infra/floci/docker-compose.yml up -d
+#   Floci + API + website:   docker compose -f infra/floci/docker-compose.yml --profile app up -d --build
+#   Stop (data is kept):     docker compose -f infra/floci/docker-compose.yml --profile app down
+#
+# Never add -v to "down" unless you want to delete every table and log.
+name: team07-recipe-organizer
+
+services:
+  floci:
+    image: floci/floci:latest
+    ports:
+      # 127.0.0.1 = only this PC can reach it, not other people on the same Wi-Fi
+      - "127.0.0.1:4566:4566"
+    volumes:
+      - floci-data:/app/data
+      # lets Floci start its web console (http://localhost:4566/_floci/ui) as a container
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      FLOCI_HOSTNAME: floci
+      # the image keeps everything in memory by default; this keeps tables and logs on disk
+      FLOCI_STORAGE_MODE: persistent
+      FLOCI_STORAGE_PERSISTENT_PATH: /app/data
+      FLOCI_SERVICES_DOCKER_NETWORK: team07_net
+      # the console has no login, so keep it on this PC too
+      FLOCI_SERVICES_UI_BIND_ADDRESS: "127.0.0.1"
+
+  api:
+    profiles: ["app"]
+    build: ../../backend
+    ports:
+      - "127.0.0.1:3000:3000"
+    # JWT_SECRET and the other settings come from backend/.env (never committed)
+    env_file: ../../backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATA_STORE: dynamodb
+      AUTO_CREATE_TABLES: "true"
+      AWS_ENDPOINT_URL: http://floci:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      LOG_TO_CLOUDWATCH: "true"
+      CORS_ORIGINS: http://localhost:8080
+    depends_on:
+      - floci
+    restart: unless-stopped
+
+  web:
+    profiles: ["app"]
+    build: ../../frontend
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - api
+
+networks:
+  default:
+    name: team07_net
+
+volumes:
+  floci-data:
