@@ -1,0 +1,27 @@
+# Who has to approve changes to which files.
+# With "Require review from Code Owners" turned on (Settings > Branches), a pull request
+# that changes any of these files can't be merged until Omar approves it.
+
+# Meal Plan and Shopping List service (Omar Hany)
+/backend/services/mealPlanService.js      @omarr112434
+/backend/services/shoppingListService.js  @omarr112434
+/backend/services/ingredientMerge.js      @omarr112434
+/backend/services/views.js                @omarr112434
+/backend/controllers/mealPlans.js         @omarr112434
+/backend/controllers/shoppingLists.js     @omarr112434
+/backend/routes/mealPlans.js              @omarr112434
+/backend/routes/shoppingLists.js          @omarr112434
+/frontend/planner.html                    @omarr112434
+/frontend/shopping-list.html              @omarr112434
+/frontend/js/planner.js                   @omarr112434
+/frontend/js/shopping-list.js             @omarr112434
+
+# Shared setup everyone depends on (database, logging, Floci, tests)
+/backend/storage/                         @omarr112434
+/backend/middleware/                      @omarr112434
+/backend/logger.js                        @omarr112434
+/backend/cloudwatch.js                    @omarr112434
+/backend/config.js                        @omarr112434
+/backend/tests/                           @omarr112434
+/infra/                                   @omarr112434
+/.github/                                 @omarr112434
