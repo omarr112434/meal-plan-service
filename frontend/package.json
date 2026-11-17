@@ -1,0 +1,12 @@
+{
+  "name": "mealplan-frontend",
+  "version": "1.0.0",
+  "description": "Recipe Organizer + Meal Plan (Team 07): planner and shopping list pages",
+  "private": true,
+  "scripts": {
+    "start": "http-server . -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

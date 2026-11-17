@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal planner | Recipe Organizer</title>
+    <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="app-header">
+    <div class="header-row">
+        <div>
+            <h1>Recipe Organizer</h1>
+            <p>Plan your week, then get one shopping list.</p>
+        </div>
+        <nav class="app-nav" aria-label="Main">
+            <a href="planner.html" aria-current="page">Meal planner</a>
+            <a href="shopping-list.html" id="nav-list">Shopping list</a>
+        </nav>
+    </div>
+</header>
+
+<section id="login-panel" class="panel login-panel" hidden>
+    <h2>You are not logged in</h2>
+    <p id="login-help"></p>
+    <form id="dev-token-form" hidden>
+        <label for="dev-token">Test token</label>
+        <textarea id="dev-token" rows="4" spellcheck="false"></textarea>
+        <button type="submit" class="button-primary">Use this token</button>
+    </form>
+</section>
+
+<main class="planner-layout" data-needs-login hidden>
+    <aside class="panel recipes-panel">
+        <h2>My recipes</h2>
+        <label for="recipe-search">Search</label>
+        <input id="recipe-search" type="search" placeholder="e.g. soup" maxlength="50" autocomplete="off">
+        <p class="hint">Drag a recipe onto a day. No mouse? Press a recipe, then press a slot.</p>
+        <ul id="recipe-list" class="recipe-list"></ul>
+    </aside>
+
+    <section class="panel week-panel">
+        <div class="week-bar">
+            <button id="prev-week" type="button" class="button-quiet">&larr; Previous</button>
+            <h2 id="week-title">This week</h2>
+            <button id="next-week" type="button" class="button-quiet">Next &rarr;</button>
+        </div>
+
+        <p id="picked-bar" class="picked-bar" hidden>
+            <span id="picked-text"></span>
+            <button id="cancel-pick" type="button" class="button-quiet">Cancel</button>
+        </p>
+
+        <div id="no-plan" class="empty-state" hidden>
+            <p>No meal plan for this week yet.</p>
+            <button id="create-plan" type="button" class="button-primary">Create a plan for this week</button>
+        </div>
+
+        <div id="week-grid" class="week-grid" hidden></div>
+
+        <div id="plan-actions" class="plan-actions" hidden>
+            <button id="generate-list" type="button" class="button-primary">Generate shopping list</button>
+            <a id="open-list" class="button-link" href="shopping-list.html" hidden>Open this week's list</a>
+        </div>
+
+        <p id="message" class="message" aria-live="polite"></p>
+    </section>
+</main>
+
+<script src="js/config.js" defer></script>
+<script src="js/session.js" defer></script>
+<script src="js/api.js" defer></script>
+<script src="js/planner.js" defer></script>
+</body>
+</html>

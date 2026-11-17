@@ -1,0 +1,132 @@
+{
+  "_note": "Stand-in recipes until the Recipe Library service (Ahmed Shakib) is plugged in. Ingredients are already in the normalized shape the Import and Ingredient service (Ahmed Bassem) produces. 'starter' is used for every user not listed under 'users'.",
+  "starter": [
+    {
+      "id": "rcp-koshari",
+      "title": "Koshari",
+      "tags": ["egyptian", "dinner", "vegetarian"],
+      "ingredients": [
+        { "ingredientId": "ing-rice", "name": "Rice", "quantity": 200, "unit": "g" },
+        { "ingredientId": "ing-brown-lentils", "name": "Brown lentils", "quantity": 150, "unit": "g" },
+        { "ingredientId": "ing-macaroni", "name": "Macaroni", "quantity": 200, "unit": "g" },
+        { "ingredientId": "ing-onion", "name": "Onion", "quantity": 2, "unit": "" },
+        { "ingredientId": "ing-tomato-sauce", "name": "Tomato sauce", "quantity": 400, "unit": "ml" },
+        { "ingredientId": "ing-garlic", "name": "Garlic", "quantity": 4, "unit": "clove" },
+        { "ingredientId": "ing-vinegar", "name": "White vinegar", "quantity": 2, "unit": "tbsp" },
+        { "ingredientId": "ing-oil", "name": "Vegetable oil", "quantity": 4, "unit": "tbsp" },
+        { "ingredientId": "ing-cumin", "name": "Ground cumin", "quantity": 1, "unit": "tsp" },
+        { "ingredientId": "ing-salt", "name": "Salt", "quantity": null, "unit": "" }
+      ]
+    },
+    {
+      "id": "rcp-lentil-soup",
+      "title": "Lentil soup",
+      "tags": ["egyptian", "soup", "vegetarian"],
+      "ingredients": [
+        { "ingredientId": "ing-red-lentils", "name": "Red lentils", "quantity": 250, "unit": "g" },
+        { "ingredientId": "ing-onion", "name": "Onion", "quantity": 1, "unit": "" },
+        { "ingredientId": "ing-carrot", "name": "Carrot", "quantity": 2, "unit": "" },
+        { "ingredientId": "ing-garlic", "name": "Garlic", "quantity": 2, "unit": "clove" },
+        { "ingredientId": "ing-cumin", "name": "Ground cumin", "quantity": 1, "unit": "tsp" },
+        { "ingredientId": "ing-oil", "name": "Vegetable oil", "quantity": 2, "unit": "tbsp" },
+        { "ingredientId": "ing-lemon", "name": "Lemon", "quantity": 1, "unit": "" },
+        { "ingredientId": "ing-salt", "name": "Salt", "quantity": null, "unit": "" }
+      ]
+    },
+    {
+      "id": "rcp-shakshuka",
+      "title": "Shakshuka",
+      "tags": ["breakfast", "eggs", "vegetarian"],
+      "ingredients": [
+        { "ingredientId": "ing-egg", "name": "Eggs", "quantity": 4, "unit": "" },
+        { "ingredientId": "ing-tomato", "name": "Tomato", "quantity": 4, "unit": "" },
+        { "ingredientId": "ing-onion", "name": "Onion", "quantity": 1, "unit": "" },
+        { "ingredientId": "ing-green-pepper", "name": "Green pepper", "quantity": 1, "unit": "" },
+        { "ingredientId": "ing-garlic", "name": "Garlic", "quantity": 2, "unit": "clove" },
+        { "ingredientId": "ing-oil", "name": "Vegetable oil", "quantity": 2, "unit": "tbsp" },
+        { "ingredientId": "ing-cumin", "name": "Ground cumin", "quantity": 0.5, "unit": "tsp" },
+        { "ingredientId": "ing-salt", "name": "Salt", "quantity": null, "unit": "" }
+      ]
+    },
+    {
+      "id": "rcp-chicken-shawarma",
+      "title": "Chicken shawarma wraps",
+      "tags": ["dinner", "chicken"],
+      "ingredients": [
+        { "ingredientId": "ing-chicken-breast", "name": "Chicken breast", "quantity": 0.5, "unit": "kg" },
+        { "ingredientId": "ing-yogurt", "name": "Plain yogurt", "quantity": 1, "unit": "cup" },
+        { "ingredientId": "ing-garlic", "name": "Garlic", "quantity": 3, "unit": "clove" },
+        { "ingredientId": "ing-lemon", "name": "Lemon", "quantity": 1, "unit": "" },
+        { "ingredientId": "ing-oil", "name": "Vegetable oil", "quantity": 3, "unit": "tbsp" },
+        { "ingredientId": "ing-pita", "name": "Pita bread", "quantity": 4, "unit": "pieces" }
+      ]
+    },
+    {
+      "id": "rcp-macarona-bechamel",
+      "title": "Macarona bechamel",
+      "tags": ["egyptian", "dinner", "oven"],
+      "ingredients": [
+        { "ingredientId": "ing-penne", "name": "Penne pasta", "quantity": 500, "unit": "g" },
+        { "ingredientId": "ing-minced-beef", "name": "Minced beef", "quantity": 400, "unit": "g" },
+        { "ingredientId": "ing-onion", "name": "Onion", "quantity": 1, "unit": "" },
+        { "ingredientId": "ing-milk", "name": "Milk", "quantity": 1, "unit": "l" },
+        { "ingredientId": "ing-flour", "name": "Flour", "quantity": 60, "unit": "g" },
+        { "ingredientId": "ing-butter", "name": "Butter", "quantity": 60, "unit": "g" },
+        { "ingredientId": "ing-salt", "name": "Salt", "quantity": null, "unit": "" }
+      ]
+    },
+    {
+      "id": "rcp-pancakes",
+      "title": "Pancakes",
+      "tags": ["breakfast", "sweet"],
+      "ingredients": [
+        { "ingredientId": "ing-flour", "name": "Flour", "quantity": 200, "unit": "g" },
+        { "ingredientId": "ing-milk", "name": "Milk", "quantity": 300, "unit": "ml" },
+        { "ingredientId": "ing-egg", "name": "Eggs", "quantity": 2, "unit": "" },
+        { "ingredientId": "ing-sugar", "name": "Sugar", "quantity": 2, "unit": "tbsp" },
+        { "ingredientId": "ing-butter", "name": "Butter", "quantity": 30, "unit": "g" },
+        { "ingredientId": "ing-baking-powder", "name": "Baking powder", "quantity": 2, "unit": "tsp" }
+      ]
+    },
+    {
+      "id": "rcp-greek-salad",
+      "title": "Greek salad",
+      "tags": ["salad", "vegetarian", "quick"],
+      "ingredients": [
+        { "ingredientId": "ing-tomato", "name": "Tomato", "quantity": 3, "unit": "" },
+        { "ingredientId": "ing-cucumber", "name": "Cucumber", "quantity": 2, "unit": "" },
+        { "ingredientId": "ing-feta", "name": "Feta cheese", "quantity": 200, "unit": "g" },
+        { "ingredientId": "ing-olives", "name": "Black olives", "quantity": 100, "unit": "g" },
+        { "ingredientId": "ing-olive-oil", "name": "Olive oil", "quantity": 3, "unit": "tbsp" },
+        { "ingredientId": "ing-lemon", "name": "Lemon", "quantity": 0.5, "unit": "" }
+      ]
+    }
+  ],
+  "users": {
+    "demo-user-2": [
+      {
+        "id": "rcp-ful-medames",
+        "title": "Ful medames",
+        "tags": ["egyptian", "breakfast"],
+        "ingredients": [
+          { "ingredientId": "ing-fava-beans", "name": "Fava beans", "quantity": 400, "unit": "g" },
+          { "ingredientId": "ing-garlic", "name": "Garlic", "quantity": 2, "unit": "clove" },
+          { "ingredientId": "ing-lemon", "name": "Lemon", "quantity": 1, "unit": "" },
+          { "ingredientId": "ing-cumin", "name": "Ground cumin", "quantity": 1, "unit": "tsp" },
+          { "ingredientId": "ing-olive-oil", "name": "Olive oil", "quantity": 2, "unit": "tbsp" },
+          { "ingredientId": "ing-salt", "name": "Salt", "quantity": null, "unit": "" }
+        ]
+      },
+      {
+        "id": "rcp-cheese-omelette",
+        "title": "Cheese omelette",
+        "tags": ["breakfast", "eggs"],
+        "ingredients": [
+          { "ingredientId": "ing-egg", "name": "Eggs", "quantity": 3, "unit": "" },
+          { "ingredientId": "ing-cheddar", "name": "Cheddar cheese", "quantity": 50, "unit": "g" },
+          { "ingredientId": "ing-butter", "name": "Butter", "quantity": 10, "unit": "g" }
+        ]
+      }
+    ]
+  }
+}

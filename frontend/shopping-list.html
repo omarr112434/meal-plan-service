@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping list | Recipe Organizer</title>
+    <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="app-header">
+    <div class="header-row">
+        <div>
+            <h1>Recipe Organizer</h1>
+            <p>Everything you need for the week, in one list.</p>
+        </div>
+        <nav class="app-nav" aria-label="Main">
+            <a href="planner.html" id="nav-planner">Meal planner</a>
+            <a href="shopping-list.html" aria-current="page">Shopping list</a>
+        </nav>
+    </div>
+</header>
+
+<section id="login-panel" class="panel login-panel" hidden>
+    <h2>You are not logged in</h2>
+    <p id="login-help"></p>
+    <form id="dev-token-form" hidden>
+        <label for="dev-token">Test token</label>
+        <textarea id="dev-token" rows="4" spellcheck="false"></textarea>
+        <button type="submit" class="button-primary">Use this token</button>
+    </form>
+</section>
+
+<main class="list-layout" data-needs-login hidden>
+    <section class="panel">
+        <div id="no-list" class="empty-state" hidden>
+            <p>No shopping list open.</p>
+            <p class="hint">Plan some meals, then press "Generate shopping list" on the planner.</p>
+            <a class="button-link" href="planner.html">Go to the meal planner</a>
+        </div>
+
+        <div id="list-view" hidden>
+            <div class="list-head">
+                <div>
+                    <h2 id="list-title">Shopping list</h2>
+                    <p id="list-progress" class="hint"></p>
+                </div>
+                <div class="list-tools">
+                    <a id="back-to-plan" class="button-quiet" href="planner.html">Back to the plan</a>
+                    <button id="print-list" type="button" class="button-quiet">Print</button>
+                </div>
+            </div>
+            <progress id="progress-bar" max="1" value="0"></progress>
+            <ul id="items" class="items"></ul>
+        </div>
+
+        <p id="message" class="message" aria-live="polite"></p>
+    </section>
+</main>
+
+<script src="js/config.js" defer></script>
+<script src="js/session.js" defer></script>
+<script src="js/api.js" defer></script>
+<script src="js/shopping-list.js" defer></script>
+</body>
+</html>
