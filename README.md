@@ -20,7 +20,20 @@ It runs on **Floci** (a free local copy of AWS) with **DynamoDB** for the data a
 for the logs, same setup as the labs. Until the other two services are merged it uses sample recipes
 and test login tokens, so it can be run and demoed on its own (see `docs/integration-notes.md`).
 
-## Run it on Floci
+## Easiest way (Windows): double-click
+
+1. Open **Docker Desktop** and wait for **Engine running**.
+2. Double-click **`START.bat`** in this folder. The first time it makes `backend\.env` with a random
+   secret, Docker downloads Floci and builds the app (a few minutes), then the planner opens in your
+   browser with your test login token already copied: click the box, press **Ctrl+V**, then
+   **Use this token**.
+3. Double-click **`STOP.bat`** when you're done (data is kept). **`GET-TOKEN.bat`** copies a new
+   token if the old one expired (they last 8 hours).
+
+Floci itself is never installed by hand: Docker downloads it the first time `START.bat` runs.
+Keep Docker's storage on D: (Docker Desktop → Settings → Resources → Advanced → Disk image location).
+
+## Run it on Floci (Git Bash, same commands as the lab guide)
 
 You need Docker Desktop and Git Bash (installed in the lab guide). Every command runs in Git Bash
 **inside this project folder** (the one with `backend`, `frontend` and `infra`).

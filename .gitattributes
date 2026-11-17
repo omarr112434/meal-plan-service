@@ -1,0 +1,4 @@
+# Windows files need CRLF, shell scripts need LF (or Git Bash fails with "$'\r': command not found")
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.sh text eol=lf
