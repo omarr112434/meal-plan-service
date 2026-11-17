@@ -1,0 +1,514 @@
+/* Same look as the lab Cloud Issue Tracker, plus the planner grid and the shopping list. */
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --navy: #203864;
+    --page: #f4f6f8;
+    --text: #1f2933;
+    --muted: #52606d;
+    --line: #d9e2ec;
+    --slot: #f8fafc;
+    --blue: #2f5bb7;
+    --green: #2f7d4f;
+    --red: #b42318;
+    --amber: #fff4d6;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--page);
+    color: var(--text);
+    line-height: 1.4;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+/* ---------- header ---------- */
+.app-header {
+    padding: 1.5rem 2rem;
+    background: var(--navy);
+    color: white;
+}
+
+.app-header h1 {
+    margin: 0 0 0.25rem;
+}
+
+.app-header p {
+    margin: 0;
+    opacity: 0.85;
+}
+
+.header-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.app-nav a {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.app-nav a[aria-current="page"] {
+    background: white;
+    color: var(--navy);
+    font-weight: 600;
+}
+
+/* ---------- shared bits ---------- */
+.panel {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+}
+
+.panel h2 {
+    margin-top: 0;
+}
+
+label {
+    font-weight: 600;
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 0.6rem;
+    font: inherit;
+    border: 1px solid #bcccdc;
+    border-radius: 6px;
+}
+
+button,
+.button-link {
+    font: inherit;
+    cursor: pointer;
+}
+
+.button-primary,
+.button-link {
+    display: inline-block;
+    padding: 0.65rem 1.1rem;
+    border: 0;
+    border-radius: 6px;
+    background: var(--navy);
+    color: white;
+    text-decoration: none;
+}
+
+.button-primary:hover,
+.button-link:hover {
+    background: #2c4a83;
+}
+
+.button-quiet {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.button-quiet:hover {
+    border-color: #9fb3c8;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+.slot:focus-visible {
+    outline: 3px solid #7fa7f5;
+    outline-offset: 2px;
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.message {
+    min-height: 1.25rem;
+    font-weight: 600;
+}
+
+.message.ok {
+    color: var(--green);
+}
+
+.message.error {
+    color: var(--red);
+}
+
+.empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+    border: 2px dashed var(--line);
+    border-radius: 10px;
+}
+
+.login-panel {
+    width: min(640px, 92%);
+    margin: 2rem auto;
+}
+
+.login-panel form {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.home {
+    width: min(900px, 92%);
+    margin: 2rem auto;
+}
+
+/* ---------- planner ---------- */
+.planner-layout {
+    width: min(1400px, 96%);
+    margin: 1.5rem auto;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.recipes-panel {
+    position: sticky;
+    top: 1rem;
+}
+
+.recipe-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.recipe-item {
+    width: 100%;
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--blue);
+    border-radius: 6px;
+    background: white;
+    cursor: grab;
+}
+
+.recipe-item:hover {
+    background: #eef3fb;
+}
+
+.week-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.week-bar h2 {
+    margin: 0;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.picked-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 6px;
+    background: var(--amber);
+    font-weight: 600;
+}
+
+/* 7 day columns; each column is the day name + 3 meal slots. The day wrapper uses
+   display: contents so breakfast, lunch and dinner line up across the whole week. */
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(130px, 1fr));
+    grid-template-rows: auto repeat(3, minmax(4.5rem, auto));
+    grid-auto-flow: column;
+    gap: 0.5rem 0.6rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+}
+
+.day {
+    display: contents;
+}
+
+.day h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.day h3.today {
+    color: var(--blue);
+}
+
+.slot {
+    min-width: 0;
+    min-height: 4.5rem;
+    padding: 0.4rem;
+    border: 1px dashed #bcccdc;
+    border-radius: 8px;
+    background: var(--slot);
+    display: grid;
+    align-content: start;
+    gap: 0.35rem;
+}
+
+.slot-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+}
+
+.slot.drag-over {
+    border: 2px solid var(--blue);
+    background: #eef3fb;
+}
+
+.week-grid.placing .slot {
+    cursor: pointer;
+    border-color: #d4a72c;
+    background: #fffbeb;
+}
+
+.chip {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.35rem 0.45rem;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid var(--line);
+    box-shadow: 0 1px 2px rgba(31, 41, 51, 0.08);
+    cursor: grab;
+    font-size: 0.88rem;
+}
+
+.chip-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.chip-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.chip-button {
+    padding: 0.1rem 0.3rem;
+    font-size: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: white;
+    color: var(--muted);
+}
+
+.chip-button:hover {
+    color: var(--text);
+    border-color: #9fb3c8;
+}
+
+.plan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+/* ---------- shopping list ---------- */
+.list-layout {
+    width: min(820px, 94%);
+    margin: 1.5rem auto;
+}
+
+.list-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: start;
+}
+
+.list-head h2 {
+    margin-bottom: 0.25rem;
+}
+
+.list-tools {
+    display: flex;
+    gap: 0.5rem;
+}
+
+progress {
+    width: 100%;
+    height: 0.6rem;
+    margin: 0.5rem 0 1rem;
+    accent-color: var(--green);
+}
+
+.items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.65rem 0.25rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.item input[type="checkbox"] {
+    width: 1.3rem;
+    height: 1.3rem;
+    accent-color: var(--green);
+}
+
+.item-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    align-items: baseline;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.item-name {
+    font-weight: 600;
+}
+
+.item-amount {
+    color: var(--navy);
+}
+
+.muted {
+    color: var(--muted);
+    font-style: italic;
+}
+
+.item-recipes {
+    flex-basis: 100%;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.item.checked .item-name,
+.item.checked .item-amount {
+    text-decoration: line-through;
+    color: var(--muted);
+}
+
+.item.editing {
+    grid-template-columns: 1fr;
+    background: #f8fafc;
+}
+
+.item-form {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 0.6rem;
+    align-items: end;
+}
+
+.item-form label {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.form-buttons {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* ---------- small screens ---------- */
+@media (max-width: 900px) {
+    .planner-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .recipes-panel {
+        position: static;
+    }
+
+    .recipe-list {
+        max-height: 14rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-header {
+        padding: 1.25rem;
+    }
+
+    /* on a phone each day is its own block, one under the other */
+    .week-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        grid-auto-flow: row;
+    }
+
+    .day {
+        display: grid;
+        gap: 0.4rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .week-bar h2 {
+        font-size: 1rem;
+    }
+
+    .item-form {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- printing the shopping list ---------- */
+@media print {
+    .app-header,
+    .list-tools,
+    .item button,
+    progress,
+    .message {
+        display: none !important;
+    }
+
+    body,
+    .panel {
+        background: white;
+        padding: 0;
+    }
+}
