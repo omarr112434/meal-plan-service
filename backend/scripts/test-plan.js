@@ -49,7 +49,7 @@ const lines = [
   '',
   `- Actual results recorded on **${ranOn}** against **${where}**.`,
   `- Result: **${passed} of ${report.rows.length} passed**.`,
-  '- Run again: start Floci, then `cd backend` and `npm run test:floci` (rewrites this file).',
+  '- Run again: double-click `TEST-ON-FLOCI.bat` (needs only Docker), or `cd backend` and `npm run test:floci`. Both rewrite this file.',
   '- The same requests can be sent by hand with `backend/requests.http` (VS Code REST Client) or the Postman collection in `evidence/`.',
   '- Tokens: user 1 is `demo-user-1`, user 2 is `demo-user-2` (made with `npm run dev-token`).',
   '',

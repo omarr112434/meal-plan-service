@@ -29,6 +29,8 @@ and test login tokens, so it can be run and demoed on its own (see `docs/integra
    **Use this token**.
 3. Double-click **`STOP.bat`** when you're done (data is kept). **`GET-TOKEN.bat`** copies a new
    token if the old one expired (they last 8 hours).
+4. **`TEST-ON-FLOCI.bat`** runs the 40 API tests against DynamoDB on Floci (inside Docker, no Node
+   needed) and writes the results to `docs/test-plan.md`.
 
 Floci itself is never installed by hand: Docker downloads it the first time `START.bat` runs.
 Keep Docker's storage on D: (Docker Desktop → Settings → Resources → Advanced → Disk image location).

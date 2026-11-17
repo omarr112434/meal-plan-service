@@ -3,7 +3,7 @@
 Normal, invalid and security cases for the Meal Plan and Shopping List service.
 Every row is an automated test in `backend/tests/api.test.js`, so the whole table can be run again with one command.
 
-- Actual results recorded on **Tue, 17 Nov 2026 15:48:28 UTC** against **a DynamoDB emulator (dynalite, same API as Floci's DynamoDB). Rerun with npm run test:floci on Floci**.
+- Actual results recorded on **Tue, 17 Nov 2026 23:12:50 UTC** against **DynamoDB on Floci (the team07 Docker Compose stack)**.
 - Result: **40 of 40 passed**.
 - Run again: start Floci, then `cd backend` and `npm run test:floci` (rewrites this file).
 - The same requests can be sent by hand with `backend/requests.http` (VS Code REST Client) or the Postman collection in `evidence/`.
