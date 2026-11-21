@@ -13,6 +13,11 @@ module.exports = function mealPlanController(service) {
       res.status(200).json(plan);
     },
 
+    async deletePlan(req, res) {
+      await service.deletePlan(req.user.id, req.params.id);
+      res.status(204).end();
+    },
+
     async addEntry(req, res) {
       const entry = await service.addEntry(req.user.id, req.params.id, req.body);
       res.status(201).json(entry);

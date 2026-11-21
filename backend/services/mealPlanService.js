@@ -5,12 +5,64 @@ const { badRequest, notFound, conflict } = require('./errors');
 const check = require('./validation');
 const { weekStartOf } = require('./dates');
 const { mergeIngredients } = require('./ingredientMerge');
+const { applyPantry } = require('./pantryMath');
+const { listFingerprint } = require('./listFreshness');
 const { showEntry, showPlan, showList } = require('./views');
+const { MAX_PER_SLOT, MAX_PER_PLAN, MAX_LIST_ITEMS, SAVE_ATTEMPTS } = require('./limits');
 
-const MAX_PER_SLOT = 4;
-const MAX_PER_PLAN = 60;
-const MAX_LIST_ITEMS = 300;
-const SAVE_ATTEMPTS = 3;
+// Builds the new list items from a fresh calculation, keeping what the user did on the old
+// list: ticks, their own edits (name, amount, unit), items they added and items they removed.
+// Items are matched by key (ingredient + kind of unit), because the user may have renamed them.
+function keepUserChanges(fresh, oldList) {
+  const before = new Map();
+  if (oldList) {
+    for (const item of oldList.items) {
+      if (item.source !== 'manual' && item.key) before.set(item.key, item);
+    }
+  }
+  const hidden = new Set(oldList ? oldList.hiddenKeys || [] : []);
+
+  const items = [];
+  for (const item of fresh) {
+    if (hidden.has(item.key)) continue; // the user removed it from the list before
+    const old = before.get(item.key);
+    const next = {
+      id: old ? old.id : randomUUID(),
+      source: 'plan',
+      key: item.key,
+      ingredientId: item.ingredientId,
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      recipes: item.recipes,
+      needed: item.needed,
+      atHome: item.atHome,
+      covered: item.covered,
+      checked: old ? old.checked : false,
+      edited: old ? Boolean(old.edited) : false
+    };
+    if (old && old.edited) {
+      // the user's own amount wins; "needed" still shows what the plan asks for now
+      next.name = old.name;
+      next.quantity = old.quantity;
+      next.unit = old.unit;
+    }
+    items.push(next);
+  }
+
+  if (oldList) {
+    for (const item of oldList.items) {
+      if (item.source === 'manual') items.push(item); // things like paper towels stay
+    }
+  }
+  return items;
+}
+
+function checkListSize(items) {
+  if (items.length > MAX_LIST_ITEMS) {
+    throw badRequest('This plan has too many ingredients for one shopping list.');
+  }
+}
 
 function createMealPlanService({ store, recipes, now = () => new Date() }) {
   const timestamp = () => now().toISOString();
@@ -38,6 +90,11 @@ function createMealPlanService({ store, recipes, now = () => new Date() }) {
         if (error.code !== 'VERSION_CONFLICT' || attempt >= SAVE_ATTEMPTS) throw error;
       }
     }
+  }
+
+  async function pantryItemsOf(userId) {
+    const pantry = await store.findPantry(userId);
+    return pantry ? pantry.items : [];
   }
 
   async function recipeTitles(userId) {
@@ -91,7 +148,17 @@ function createMealPlanService({ store, recipes, now = () => new Date() }) {
 
     const plan = await store.findPlanByWeek(userId, weekStart);
     if (!plan) throw notFound('PLAN_NOT_FOUND', 'No meal plan for this week yet.');
-    return showPlan(plan, await recipeTitles(userId));
+
+    const shoppingListOutOfDate = Boolean(plan.shoppingListId)
+      && listFingerprint(plan, await pantryItemsOf(userId)) !== plan.listFingerprint;
+    return showPlan(plan, await recipeTitles(userId), { shoppingListOutOfDate });
+  }
+
+  // DELETE /api/mealplans/{id}   (the plan's shopping list goes with it)
+  async function deletePlan(userId, planId) {
+    const plan = await loadPlan(userId, planId);
+    if (plan.shoppingListId) await store.deleteList(userId, plan.shoppingListId);
+    await store.deletePlan(userId, plan.weekStart);
   }
 
   // POST /api/mealplans/{id}/entries   (copying an entry uses this too)
@@ -150,13 +217,15 @@ function createMealPlanService({ store, recipes, now = () => new Date() }) {
     });
   }
 
-  // Replaces the items of an existing list, retrying if someone ticked an item meanwhile.
-  async function replaceListItems(userId, listId, items, time) {
+  // Saves the regenerated items into the existing list, retrying if someone ticked an
+  // item meanwhile. Returns null if the list was deleted.
+  async function refreshList(userId, listId, fresh, extra) {
     for (let attempt = 1; ; attempt += 1) {
       const list = await store.findList(userId, listId);
       if (!list) return null;
-      list.items = items;
-      list.updatedAt = time;
+      list.items = keepUserChanges(fresh, list);
+      checkListSize(list.items);
+      Object.assign(list, extra);
       try {
         return await store.saveList(list);
       } catch (error) {
@@ -166,7 +235,10 @@ function createMealPlanService({ store, recipes, now = () => new Date() }) {
   }
 
   // POST /api/mealplans/{id}/shoppinglist
-  // Generating again replaces the old list (same list id, fresh items, nothing ticked).
+  // 1. get every planned recipe from the Recipe Library (only this user's recipes)
+  // 2. add the same ingredients together and convert units (ingredientMerge.js)
+  // 3. take off what is already in the pantry (pantryMath.js)
+  // 4. generating again keeps ticks, edits, added and removed items (keepUserChanges)
   async function generateShoppingList(userId, planId) {
     const plan = await loadPlan(userId, planId);
     if (plan.entries.length === 0) {
@@ -174,48 +246,98 @@ function createMealPlanService({ store, recipes, now = () => new Date() }) {
     }
 
     const lines = [];
+    const warnings = [];
     const cache = new Map();
     for (const entry of plan.entries) {
       if (!cache.has(entry.recipeId)) {
-        cache.set(entry.recipeId, await recipes.getRecipe(userId, entry.recipeId));
+        const recipe = await recipes.getRecipe(userId, entry.recipeId);
+        cache.set(entry.recipeId, recipe);
+        if (!recipe) {
+          warnings.push({
+            code: 'RECIPE_REMOVED',
+            recipeId: entry.recipeId,
+            message: 'A planned recipe is no longer in your library, so it was skipped.'
+          });
+        } else if (!Array.isArray(recipe.ingredients) || recipe.ingredients.length === 0) {
+          warnings.push({
+            code: 'NO_INGREDIENTS',
+            recipeId: recipe.id,
+            message: `${recipe.title} has no ingredients yet, so it adds nothing to the list.`
+          });
+        }
       }
       const recipe = cache.get(entry.recipeId);
-      if (!recipe) continue; // recipe was deleted from the library after it was planned
+      if (!recipe) continue;
       for (const ingredient of recipe.ingredients || []) {
         lines.push({ ...ingredient, recipeTitle: recipe.title });
       }
     }
 
-    const merged = mergeIngredients(lines);
-    if (merged.length > MAX_LIST_ITEMS) {
-      throw badRequest('This plan has too many ingredients for one shopping list.');
-    }
-    const items = merged.map((item) => ({ id: randomUUID(), ...item, checked: false }));
+    const pantryItems = await pantryItemsOf(userId);
+    const fresh = applyPantry(mergeIngredients(lines), pantryItems);
+    checkListSize(fresh);
     const time = timestamp();
+    const fingerprint = listFingerprint(plan, pantryItems);
 
+    let list = null;
     if (plan.shoppingListId) {
-      const replaced = await replaceListItems(userId, plan.shoppingListId, items, time);
-      if (replaced) return showList(replaced);
+      list = await refreshList(userId, plan.shoppingListId, fresh, {
+        warnings,
+        sourceFingerprint: fingerprint,
+        updatedAt: time
+      });
+    }
+    if (!list) {
+      list = {
+        userId,
+        id: randomUUID(),
+        mealPlanId: plan.id,
+        weekStart: plan.weekStart,
+        items: keepUserChanges(fresh, null),
+        hiddenKeys: [],
+        warnings,
+        sourceFingerprint: fingerprint,
+        version: 1,
+        createdAt: time,
+        updatedAt: time
+      };
+      await store.createList(list);
     }
 
-    const list = {
-      userId,
-      id: randomUUID(),
-      mealPlanId: plan.id,
-      weekStart: plan.weekStart,
-      items,
-      version: 1,
-      createdAt: time,
-      updatedAt: time
-    };
-    await store.createList(list);
     await changePlan(userId, plan.id, (latest) => {
       latest.shoppingListId = list.id;
+      latest.listFingerprint = fingerprint;
     });
-    return showList(list);
+    return showList(list, { outOfDate: false });
   }
 
-  return { createPlan, getPlanForWeek, addEntry, moveEntry, removeEntry, generateShoppingList };
+  // For the Recipe Library: after a user deletes a recipe, call this so the recipe also
+  // leaves their meal plans (their shopping lists then show as out of date).
+  // Returns how many plan entries were removed.
+  async function removeRecipeEverywhere(userId, recipeId) {
+    let removed = 0;
+    for (const plan of await store.listPlans(userId)) {
+      if (!plan.entries.some((entry) => entry.recipeId === recipeId)) continue;
+      const { result } = await changePlan(userId, plan.id, (latest) => {
+        const before = latest.entries.length;
+        latest.entries = latest.entries.filter((entry) => entry.recipeId !== recipeId);
+        return before - latest.entries.length;
+      });
+      removed += result;
+    }
+    return removed;
+  }
+
+  return {
+    createPlan,
+    getPlanForWeek,
+    deletePlan,
+    addEntry,
+    moveEntry,
+    removeEntry,
+    generateShoppingList,
+    removeRecipeEverywhere
+  };
 }
 
-module.exports = { createMealPlanService, MAX_PER_SLOT, MAX_PER_PLAN };
+module.exports = { createMealPlanService, keepUserChanges, MAX_PER_SLOT, MAX_PER_PLAN };

@@ -2,6 +2,7 @@
 //
 // MealPlans      partition key userId, sort key weekStart  -> one plan per user per week
 // ShoppingLists  partition key userId, sort key id
+// Pantries       partition key userId                      -> one pantry per user
 //
 // Every read uses the userId from the token as the partition key, so a user can only
 // ever reach items in their own partition.
@@ -15,7 +16,8 @@ const {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
-  QueryCommand
+  QueryCommand,
+  DeleteCommand
 } = require('@aws-sdk/lib-dynamodb');
 const { AlreadyExistsError, VersionConflictError } = require('./errors');
 
@@ -46,6 +48,12 @@ function tableDefinitions(tables) {
         { AttributeName: 'id', AttributeType: 'S' }
       ],
       BillingMode: 'PAY_PER_REQUEST'
+    },
+    {
+      TableName: tables.pantries,
+      KeySchema: [{ AttributeName: 'userId', KeyType: 'HASH' }],
+      AttributeDefinitions: [{ AttributeName: 'userId', AttributeType: 'S' }],
+      BillingMode: 'PAY_PER_REQUEST'
     }
   ];
 }
@@ -56,7 +64,11 @@ function isConnectionProblem(error) {
 }
 
 function create({ aws, tables }) {
-  const client = new DynamoDBClient({ region: aws.region, endpoint: aws.endpoint });
+  const client = new DynamoDBClient({
+    region: aws.region,
+    endpoint: aws.endpoint,
+    ...(aws.credentials ? { credentials: aws.credentials } : {})
+  });
   const db = DynamoDBDocumentClient.from(client, {
     marshallOptions: { removeUndefinedValues: true }
   });
@@ -93,6 +105,29 @@ function create({ aws, tables }) {
     }
   }
 
+  // All items in one user's partition (their plans, or their lists).
+  async function queryUser(tableName, userId) {
+    const items = [];
+    let startKey;
+    do {
+      const result = await db.send(new QueryCommand({
+        TableName: tableName,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: { ':userId': userId },
+        ExclusiveStartKey: startKey
+      }));
+      items.push(...(result.Items || []));
+      startKey = result.LastEvaluatedKey;
+    } while (startKey);
+    return items;
+  }
+
+  // Returns true if something was deleted.
+  async function deleteKey(tableName, key) {
+    const result = await db.send(new DeleteCommand({ TableName: tableName, Key: key, ReturnValues: 'ALL_OLD' }));
+    return Boolean(result.Attributes);
+  }
+
   async function createTableIfMissing(definition) {
     try {
       await client.send(new DescribeTableCommand({ TableName: definition.TableName }));
@@ -116,7 +151,7 @@ function create({ aws, tables }) {
   return {
     kind: 'dynamodb',
 
-    // Creates the two tables if they are missing. Retries for a while because the API
+    // Creates the tables if they are missing. Retries for a while because the API
     // container usually starts before Floci is ready to answer.
     async ensureTables({ attempts = 30, delayMs = 2000 } = {}) {
       const created = [];
@@ -161,8 +196,10 @@ function create({ aws, tables }) {
       return null;
     },
 
+    listPlans: (userId) => queryUser(tables.mealPlans, userId),
     createPlan: (plan) => putNew(tables.mealPlans, plan),
     savePlan: (plan) => putIfVersion(tables.mealPlans, plan),
+    deletePlan: (userId, weekStart) => deleteKey(tables.mealPlans, { userId, weekStart }),
 
     async findList(userId, listId) {
       const result = await db.send(new GetCommand({
@@ -172,8 +209,19 @@ function create({ aws, tables }) {
       return result.Item || null;
     },
 
+    listLists: (userId) => queryUser(tables.shoppingLists, userId),
     createList: (list) => putNew(tables.shoppingLists, list),
     saveList: (list) => putIfVersion(tables.shoppingLists, list),
+    deleteList: (userId, listId) => deleteKey(tables.shoppingLists, { userId, id: listId }),
+
+    async findPantry(userId) {
+      const result = await db.send(new GetCommand({ TableName: tables.pantries, Key: { userId } }));
+      return result.Item || null;
+    },
+
+    createPantry: (pantry) => putNew(tables.pantries, pantry),
+    savePantry: (pantry) => putIfVersion(tables.pantries, pantry),
+    deletePantry: (userId) => deleteKey(tables.pantries, { userId }),
 
     // used by the tests to clean up after themselves
     client,

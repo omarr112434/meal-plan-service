@@ -10,6 +10,7 @@ module.exports = function mealPlanRoutes(controller) {
 
   router.post('/', requireJson, controller.create);
   router.get('/', controller.getForWeek);
+  router.delete('/:id', controller.deletePlan);
   router.post('/:id/entries', requireJson, controller.addEntry);
   router.patch('/:id/entries/:entryId', requireJson, controller.moveEntry);
   router.delete('/:id/entries/:entryId', controller.removeEntry);

@@ -88,6 +88,35 @@ function itemChanges(body) {
   return changes;
 }
 
+// POST body for a new shopping list item or pantry item. Only name is required.
+function newItem(body) {
+  const fields = { name: itemName(body.name), quantity: null, unit: '' };
+  if (has(body, 'quantity')) fields.quantity = quantity(body.quantity);
+  if (has(body, 'unit')) fields.unit = unit(body.unit);
+  return fields;
+}
+
+// PATCH body for a pantry item (pantry items can't be ticked).
+function pantryChanges(body) {
+  const changes = {};
+  if (has(body, 'name')) changes.name = itemName(body.name);
+  if (has(body, 'quantity')) changes.quantity = quantity(body.quantity);
+  if (has(body, 'unit')) changes.unit = unit(body.unit);
+  if (Object.keys(changes).length === 0) {
+    throw badRequest('Send at least one of: name, quantity, unit.');
+  }
+  return changes;
+}
+
+// User ids come from the login service. The admin route checks the format before using one.
+const USER_ID_PATTERN = /^[A-Za-z0-9_.@-]{1,128}$/;
+function userId(value) {
+  if (typeof value !== 'string' || !USER_ID_PATTERN.test(value)) {
+    throw badRequest('userId is not valid.');
+  }
+  return value;
+}
+
 module.exports = {
   DAYS,
   MEALS,
@@ -99,5 +128,8 @@ module.exports = {
   itemName,
   quantity,
   unit,
-  itemChanges
+  itemChanges,
+  newItem,
+  pantryChanges,
+  userId
 };

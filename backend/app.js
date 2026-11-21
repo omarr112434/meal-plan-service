@@ -6,10 +6,16 @@ const requestLogger = require('./middleware/requestLogger');
 const { notFound, errorHandler } = require('./middleware/errors');
 const { createMealPlanService } = require('./services/mealPlanService');
 const { createShoppingListService } = require('./services/shoppingListService');
+const { createPantryService } = require('./services/pantryService');
+const { createAdminService } = require('./services/adminService');
 const mealPlanController = require('./controllers/mealPlans');
 const shoppingListController = require('./controllers/shoppingLists');
+const pantryController = require('./controllers/pantry');
+const adminController = require('./controllers/admin');
 const mealPlanRoutes = require('./routes/mealPlans');
 const shoppingListRoutes = require('./routes/shoppingLists');
+const pantryRoutes = require('./routes/pantry');
+const adminRoutes = require('./routes/admin');
 const sampleRecipeRoutes = require('./routes/sampleRecipes');
 
 function createApp({ store, recipes }) {
@@ -38,7 +44,7 @@ function createApp({ store, recipes }) {
   app.get('/', (req, res) => {
     res.status(200).json({
       name: 'Recipe Organizer API: Meal Plan and Shopping List service',
-      endpoints: ['/api/health', '/api/mealplans', '/api/shoppinglists']
+      endpoints: ['/api/health', '/api/mealplans', '/api/shoppinglists', '/api/pantry', '/api/admin']
     });
   });
 
@@ -49,9 +55,17 @@ function createApp({ store, recipes }) {
 
   const mealPlans = createMealPlanService({ store, recipes });
   const shoppingLists = createShoppingListService({ store });
+  const pantry = createPantryService({ store });
+  const admin = createAdminService({ store });
+
+  // For the Recipe Library: req.app.locals.mealPlans.removeRecipeEverywhere(userId, recipeId)
+  // after a recipe is deleted (see docs/integration-notes.md).
+  app.locals.mealPlans = mealPlans;
 
   app.use('/api/mealplans', mealPlanRoutes(mealPlanController(mealPlans)));
   app.use('/api/shoppinglists', shoppingListRoutes(shoppingListController(shoppingLists)));
+  app.use('/api/pantry', pantryRoutes(pantryController(pantry)));
+  app.use('/api/admin', adminRoutes(adminController(admin)));
   if (recipes.kind === 'sample') {
     app.use('/api/recipes', sampleRecipeRoutes(recipes));
   }

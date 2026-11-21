@@ -33,7 +33,8 @@ const config = {
   },
   tables: {
     mealPlans: env.MEALPLANS_TABLE || 'MealPlans',
-    shoppingLists: env.SHOPPINGLISTS_TABLE || 'ShoppingLists'
+    shoppingLists: env.SHOPPINGLISTS_TABLE || 'ShoppingLists',
+    pantries: env.PANTRIES_TABLE || 'Pantries'
   },
   autoCreateTables: env.AUTO_CREATE_TABLES === 'true',
 

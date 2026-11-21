@@ -70,8 +70,24 @@ function addUp(lines) {
   return base >= 1000 ? { quantity: round2(base / 1000), unit: 'l' } : { quantity: round2(base), unit: 'ml' };
 }
 
+// "mass", "volume", or "unit:clove" for units that can't be converted
+function unitGroupOf(unit) {
+  return own(UNITS, unit) ? UNITS[unit].group : `unit:${unit}`;
+}
+
+// Amount in g or ml (null if the unit can't be converted).
+function toBase(quantity, unit) {
+  return own(UNITS, unit) ? quantity * UNITS[unit].factor : null;
+}
+
+// Back from g or ml to the given unit.
+function fromBase(base, unit) {
+  return own(UNITS, unit) ? round2(base / UNITS[unit].factor) : null;
+}
+
 // lines: [{ ingredientId, name, quantity, unit, recipeTitle }]
-// returns: [{ ingredientId, name, quantity, unit, recipes: [titles] }], sorted by name
+// returns: [{ key, ingredientId, name, quantity, unit, recipes: [titles] }], sorted by name
+// key identifies the same line across regenerations (the user may rename the item later).
 function mergeIngredients(lines) {
   const groups = new Map();
 
@@ -82,12 +98,11 @@ function mergeIngredients(lines) {
     const unit = normalizeUnit(line.unit);
     // Lines only merge when the amounts can be added: same ingredient AND
     // same unit group (grams can't be added to cloves).
-    const unitGroup = own(UNITS, unit) ? UNITS[unit].group : `unit:${unit}`;
     const ingredient = line.ingredientId ? `id:${line.ingredientId}` : `name:${name.toLowerCase()}`;
-    const key = `${ingredient}|${unitGroup}`;
+    const key = `${ingredient}|${unitGroupOf(unit)}`;
 
     if (!groups.has(key)) {
-      groups.set(key, { ingredientId: line.ingredientId || null, name, lines: [], recipes: new Set() });
+      groups.set(key, { key, ingredientId: line.ingredientId || null, name, lines: [], recipes: new Set() });
     }
     const group = groups.get(key);
     group.lines.push({ quantity: line.quantity, unit });
@@ -96,6 +111,7 @@ function mergeIngredients(lines) {
 
   return [...groups.values()]
     .map((group) => ({
+      key: group.key,
       ingredientId: group.ingredientId,
       name: group.name,
       ...addUp(group.lines),
@@ -104,4 +120,4 @@ function mergeIngredients(lines) {
     .sort((a, b) => a.name.localeCompare(b.name) || a.unit.localeCompare(b.unit));
 }
 
-module.exports = { mergeIngredients, normalizeUnit };
+module.exports = { mergeIngredients, normalizeUnit, unitGroupOf, toBase, fromBase, round2 };

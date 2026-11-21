@@ -8,7 +8,9 @@ module.exports = function shoppingListRoutes(controller) {
   router.use(requireAuth);
 
   router.get('/:id', controller.getList);
+  router.post('/:id/items', requireJson, controller.addItem);
   router.patch('/:id/items/:itemId', requireJson, controller.updateItem);
+  router.delete('/:id/items/:itemId', controller.removeItem);
 
   return router;
 };
