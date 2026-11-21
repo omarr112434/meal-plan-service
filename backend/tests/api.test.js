@@ -153,12 +153,15 @@ test('T12 edit an item', async () => {
   assert.deepEqual([result.body.name, result.body.quantity], ['Red onion', 4]);
 });
 
-test('T13 generating again replaces the list (same id, nothing ticked)', async () => {
-  const result = await check('T13', 'Normal', 'Generate the list again', 'POST', `/api/mealplans/${ids.plan}/shoppinglist`,
-    { token: omar }, { status: 201 });
-  assert.equal(result.body.id, ids.list);
-  assert.ok(result.body.items.every((entry) => entry.checked === false));
-  ids.milk = result.body.items.find((entry) => entry.name === 'Milk').id;
+test('T13 generating again keeps ticks and my edits', async () => {
+  const result = await check('T13', 'Normal', 'Generate the list again (ticks and edits are kept)', 'POST',
+    `/api/mealplans/${ids.plan}/shoppinglist`, { token: omar }, { status: 201 });
+  assert.equal(result.body.id, ids.list, 'same list');
+  const milk = result.body.items.find((entry) => entry.id === ids.milk);
+  assert.equal(milk.checked, true, 'milk is still ticked');
+  const onion = result.body.items.find((entry) => entry.id === ids.onion);
+  assert.deepEqual([onion.name, onion.quantity, onion.edited], ['Red onion', 4, true], 'my edit is kept');
+  assert.equal(onion.needed.quantity, 6, 'and the page can still show what the plan needs');
 });
 
 // ---------- invalid cases ----------
@@ -343,4 +346,165 @@ test('T40 errors never show internal details', async () => {
     { token: omar, raw: '[1,2,3]' }, { status: 400, code: 'VALIDATION_ERROR' });
   assert.ok(!JSON.stringify(result.body).includes('at '), 'no stack trace in the response');
   assert.equal(result.headers.get('x-powered-by'), null);
+});
+
+// ---------- Phase 1 feedback: list changes, pantry, delete, admin ----------
+
+const admin = tokenFor('admin-1', 'admin');
+const listItem = (list, name) => list.items.find((entry) => entry.name === name);
+
+test('T41 add my own item to the list', async () => {
+  const result = await check('T41', 'Normal', 'Add "Paper towels" (in no recipe) to the list', 'POST',
+    `/api/shoppinglists/${ids.list}/items`, { token: omar, body: { name: 'Paper towels', quantity: 2 } }, { status: 201 });
+  assert.deepEqual([result.body.source, result.body.quantity, result.body.unit], ['manual', 2, '']);
+  ids.towels = result.body.id;
+});
+
+test('T42 remove an item; it stays removed after generating again', async () => {
+  const list = await call(api.base, 'GET', `/api/shoppinglists/${ids.list}`, { token: omar });
+  await check('T42', 'Normal', 'Remove salt from the list (have plenty)', 'DELETE',
+    `/api/shoppinglists/${ids.list}/items/${listItem(list.body, 'Salt').id}`, { token: omar }, { status: 204 });
+  const again = await call(api.base, 'POST', `/api/mealplans/${ids.plan}/shoppinglist`, { token: omar });
+  assert.equal(listItem(again.body, 'Salt'), undefined, 'salt does not come back');
+  assert.ok(again.body.items.some((entry) => entry.id === ids.towels), 'my own item is kept');
+});
+
+test('T43 the list shows when the plan changed after it was made', async () => {
+  const moved = await call(api.base, 'PATCH', `/api/mealplans/${ids.plan}/entries/${ids.koshari}`,
+    { token: omar, body: { day: 'mon', meal: 'lunch' } });
+  assert.equal(moved.status, 200);
+  let list = await call(api.base, 'GET', `/api/shoppinglists/${ids.list}`, { token: omar });
+  assert.equal(list.body.outOfDate, false, 'moving a recipe to another day changes no ingredients');
+
+  const added = await call(api.base, 'POST', `/api/mealplans/${ids.plan}/entries`,
+    { token: omar, body: { recipeId: 'rcp-chicken-shawarma', day: 'thu', meal: 'dinner' } });
+  assert.equal(added.status, 201);
+  list = await check('T43', 'Normal', 'Open the list after adding a recipe to the plan', 'GET',
+    `/api/shoppinglists/${ids.list}`, { token: omar }, { status: 200 });
+  assert.equal(list.body.outOfDate, true);
+  const plan = await call(api.base, 'GET', `/api/mealplans?week=${WEEK}`, { token: omar });
+  assert.equal(plan.body.shoppingListOutOfDate, true, 'the planner shows it too');
+
+  await call(api.base, 'POST', `/api/mealplans/${ids.plan}/shoppinglist`, { token: omar });
+  list = await call(api.base, 'GET', `/api/shoppinglists/${ids.list}`, { token: omar });
+  assert.equal(list.body.outOfDate, false, 'up to date again after updating the list');
+});
+
+test('T44 add things I already have to the pantry', async () => {
+  const result = await check('T44', 'Normal', 'Add 500 ml milk to the pantry', 'POST', '/api/pantry/items',
+    { token: omar, body: { name: 'milk', quantity: 500, unit: 'ml' } }, { status: 201 });
+  ids.pantryMilk = result.body.id;
+  for (const body of [
+    { name: 'Vegetable oil', quantity: 4, unit: 'tbsp' },
+    { name: 'Ground cumin' } // no amount = I have plenty
+  ]) {
+    const added = await call(api.base, 'POST', '/api/pantry/items', { token: omar, body });
+    assert.equal(added.status, 201);
+    if (body.name === 'Vegetable oil') ids.pantryOil = added.body.id;
+  }
+  const pantry = await call(api.base, 'GET', '/api/pantry', { token: omar });
+  assert.equal(pantry.body.items.length, 3);
+});
+
+test('T45 the shopping list takes off what is at home', async () => {
+  const before = await call(api.base, 'GET', `/api/shoppinglists/${ids.list}`, { token: omar });
+  assert.equal(before.body.outOfDate, true, 'a pantry change makes the list out of date');
+
+  const result = await check('T45', 'Normal', 'Update the list after filling the pantry', 'POST',
+    `/api/mealplans/${ids.plan}/shoppinglist`, { token: omar }, { status: 201 });
+  const milk = listItem(result.body, 'Milk');
+  assert.deepEqual([milk.needed.quantity, milk.needed.unit], [1.3, 'l']);
+  assert.deepEqual([milk.atHome.quantity, milk.quantity, milk.unit], [0.5, 0.8, 'l'], '1.3 l - 500 ml = 0.8 l to buy');
+  const oil = listItem(result.body, 'Vegetable oil');
+  assert.equal(oil.quantity, oil.needed.quantity - 4, '4 tbsp of oil are at home');
+  const cumin = listItem(result.body, 'Ground cumin');
+  assert.deepEqual([cumin.covered, cumin.quantity], [true, 0], 'nothing to buy');
+});
+
+test('T46 change a pantry amount', async () => {
+  const result = await check('T46', 'Normal', 'Change the milk at home to 2 l', 'PATCH', `/api/pantry/items/${ids.pantryMilk}`,
+    { token: omar, body: { quantity: 2, unit: 'l' } }, { status: 200 });
+  assert.deepEqual([result.body.quantity, result.body.unit], [2, 'l']);
+  const list = await call(api.base, 'GET', `/api/shoppinglists/${ids.list}`, { token: omar });
+  assert.equal(list.body.outOfDate, true);
+});
+
+test('T47 remove a pantry item (used it up)', async () => {
+  await check('T47', 'Normal', 'Remove the oil from the pantry', 'DELETE', `/api/pantry/items/${ids.pantryOil}`,
+    { token: omar }, { status: 204 });
+  const pantry = await call(api.base, 'GET', '/api/pantry', { token: omar });
+  assert.equal(pantry.body.items.length, 2);
+});
+
+test('T48 list item with no name', async () => {
+  await check('T48', 'Invalid', 'Add a list item without a name', 'POST', `/api/shoppinglists/${ids.list}/items`,
+    { token: omar, body: { quantity: 3 } }, { status: 400, code: 'VALIDATION_ERROR' });
+});
+
+test('T49 pantry item that is already there', async () => {
+  await check('T49', 'Invalid', 'Add "Milk" again in another kind of unit', 'POST', '/api/pantry/items',
+    { token: omar, body: { name: 'Milk', quantity: 1, unit: 'l' } }, { status: 409, code: 'PANTRY_ITEM_EXISTS' });
+});
+
+test('T50 pantry amount that is not a number', async () => {
+  await check('T50', 'Invalid', 'Add a pantry item with quantity "lots"', 'POST', '/api/pantry/items',
+    { token: omar, body: { name: 'Rice', quantity: 'lots' } }, { status: 400, code: 'VALIDATION_ERROR' });
+});
+
+test('T51 another user deletes my plan (IDOR)', async () => {
+  await check('T51', 'Security', 'User 2 deletes user 1\'s plan', 'DELETE', `/api/mealplans/${ids.plan}`,
+    { token: other }, { status: 404, code: 'PLAN_NOT_FOUND' });
+  const mine = await call(api.base, 'GET', `/api/mealplans?week=${WEEK}`, { token: omar });
+  assert.equal(mine.status, 200, 'still there');
+});
+
+test('T52 another user adds to my list (IDOR)', async () => {
+  await check('T52', 'Security', 'User 2 adds an item to user 1\'s list', 'POST', `/api/shoppinglists/${ids.list}/items`,
+    { token: other, body: { name: 'Free stuff' } }, { status: 404, code: 'LIST_NOT_FOUND' });
+  const removeMine = await call(api.base, 'DELETE', `/api/shoppinglists/${ids.list}/items/${ids.towels}`, { token: other });
+  assert.equal(removeMine.status, 404);
+});
+
+test('T53 another user changes my pantry (IDOR)', async () => {
+  await check('T53', 'Security', 'User 2 edits an item in user 1\'s pantry', 'PATCH', `/api/pantry/items/${ids.pantryMilk}`,
+    { token: other, body: { quantity: 9 } }, { status: 404, code: 'PANTRY_ITEM_NOT_FOUND' });
+  const theirs = await call(api.base, 'GET', '/api/pantry', { token: other });
+  assert.deepEqual(theirs.body.items, [], 'user 2 only sees their own (empty) pantry');
+});
+
+test('T54 script in a pantry item name (stored XSS)', async () => {
+  await check('T54', 'Security', 'Add a pantry item called <img src=x onerror=alert(1)>', 'POST', '/api/pantry/items',
+    { token: omar, body: { name: '<img src=x onerror=alert(1)>' } }, { status: 400, code: 'VALIDATION_ERROR' });
+});
+
+test('T55 pantry without logging in', async () => {
+  await check('T55', 'Security', 'Open the pantry without a token', 'GET', '/api/pantry', {}, { status: 401, code: 'UNAUTHORIZED' });
+});
+
+test('T56 a normal user calls the admin cleanup', async () => {
+  await check('T56', 'Security', 'User role calls the admin-only delete', 'DELETE', '/api/admin/users/demo-user-2/mealplan-data',
+    { token: omar }, { status: 403, code: 'FORBIDDEN' });
+});
+
+test('T57 delete a whole plan (its shopping list goes too)', async () => {
+  await check('T57', 'Normal', 'Delete the week\'s plan', 'DELETE', `/api/mealplans/${ids.plan}`, { token: omar }, { status: 204 });
+  const plan = await call(api.base, 'GET', `/api/mealplans?week=${WEEK}`, { token: omar });
+  assert.equal(plan.status, 404);
+  const list = await call(api.base, 'GET', `/api/shoppinglists/${ids.list}`, { token: omar });
+  assert.equal(list.status, 404);
+});
+
+test('T58 admin deletes a user\'s meal plan data', async () => {
+  const plan = await call(api.base, 'POST', '/api/mealplans', { token: other, body: { weekStart: WEEK } });
+  assert.equal(plan.status, 201);
+  const stock = await call(api.base, 'POST', '/api/pantry/items', { token: other, body: { name: 'Bread' } });
+  assert.equal(stock.status, 201);
+
+  const result = await check('T58', 'Normal', 'Admin deletes user 2\'s plans, lists and pantry', 'DELETE',
+    '/api/admin/users/demo-user-2/mealplan-data', { token: admin }, { status: 200 });
+  assert.deepEqual(result.body.deleted, { mealPlans: 1, shoppingLists: 0, pantry: 1 });
+  const gone = await call(api.base, 'GET', `/api/mealplans?week=${WEEK}`, { token: other });
+  assert.equal(gone.status, 404);
+  const bad = await call(api.base, 'DELETE', '/api/admin/users/bad%20id!/mealplan-data', { token: admin });
+  assert.equal(bad.status, 400, 'the user id format is checked too');
 });

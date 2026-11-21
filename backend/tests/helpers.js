@@ -28,7 +28,11 @@ async function makeStore() {
   const suffix = randomUUID().slice(0, 8);
   const store = dynamoStore.create({
     aws: { region: process.env.AWS_REGION || 'us-east-1', endpoint },
-    tables: { mealPlans: `test-MealPlans-${suffix}`, shoppingLists: `test-ShoppingLists-${suffix}` }
+    tables: {
+      mealPlans: `test-MealPlans-${suffix}`,
+      shoppingLists: `test-ShoppingLists-${suffix}`,
+      pantries: `test-Pantries-${suffix}`
+    }
   });
   await store.ensureTables({ attempts: 3, delayMs: 1000 });
   store.cleanUp = async () => {
