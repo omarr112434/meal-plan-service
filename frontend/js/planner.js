@@ -10,6 +10,8 @@ const grid = document.querySelector('#week-grid');
 const noPlan = document.querySelector('#no-plan');
 const planActions = document.querySelector('#plan-actions');
 const openListLink = document.querySelector('#open-list');
+const staleBanner = document.querySelector('#stale-banner');
+const deletePlanButton = document.querySelector('#delete-plan');
 const navListLink = document.querySelector('#nav-list');
 const recipeList = document.querySelector('#recipe-list');
 const recipeSearch = document.querySelector('#recipe-search');
@@ -104,10 +106,12 @@ function renderPlan() {
   navListLink.href = listUrl;
   openListLink.href = listUrl;
 
+  resetDeleteButton();
   if (!plan) {
     noPlan.hidden = false;
     grid.hidden = true;
     planActions.hidden = true;
+    staleBanner.hidden = true;
     return;
   }
 
@@ -115,6 +119,9 @@ function renderPlan() {
   grid.hidden = false;
   planActions.hidden = false;
   openListLink.hidden = !plan.shoppingListId;
+  // the API says when recipes were added or removed after the list was made
+  staleBanner.hidden = !plan.shoppingListOutOfDate;
+  document.querySelector('#generate-list').textContent = plan.shoppingListId ? 'Update shopping list' : 'Generate shopping list';
   grid.replaceChildren();
 
   DAYS.forEach((day, index) => {
@@ -189,8 +196,8 @@ function renderSlot(day, meal) {
 
 function renderEntry(entry) {
   const chip = document.createElement('div');
-  chip.className = 'chip';
-  chip.draggable = true;
+  chip.className = entry.recipeMissing ? 'chip missing' : 'chip';
+  chip.draggable = !entry.recipeMissing;
   chip.addEventListener('dragstart', (event) => {
     event.dataTransfer.setData('application/x-entry', entry.id);
     event.dataTransfer.setData('text/plain', entry.recipeTitle);
@@ -203,11 +210,16 @@ function renderEntry(entry) {
 
   const tools = document.createElement('span');
   tools.className = 'chip-tools';
-  tools.append(
-    chipButton('Move', `Move ${entry.recipeTitle}`, () => pick({ action: 'move', entryId: entry.id, title: entry.recipeTitle })),
-    chipButton('Copy', `Copy ${entry.recipeTitle} to another slot`, () => pick({ action: 'copy', recipeId: entry.recipeId, title: entry.recipeTitle })),
-    chipButton('✕', `Remove ${entry.recipeTitle}`, () => removeEntry(entry))
-  );
+  if (entry.recipeMissing) {
+    // the recipe was deleted from the library: it adds nothing to the list, so offer to remove it
+    tools.append(chipButton('Remove', 'Remove this deleted recipe from the plan', () => removeEntry(entry)));
+  } else {
+    tools.append(
+      chipButton('Move', `Move ${entry.recipeTitle}`, () => pick({ action: 'move', entryId: entry.id, title: entry.recipeTitle })),
+      chipButton('Copy', `Copy ${entry.recipeTitle} to another slot`, () => pick({ action: 'copy', recipeId: entry.recipeId, title: entry.recipeTitle })),
+      chipButton('✕', `Remove ${entry.recipeTitle}`, () => removeEntry(entry))
+    );
+  }
 
   chip.append(title, tools);
   return chip;
@@ -283,12 +295,10 @@ document.querySelector('#create-plan').addEventListener('click', () => {
   run(() => api('/mealplans', { method: 'POST', body: { weekStart } }), 'Plan created. Now drag some recipes in.');
 });
 
-document.querySelector('#generate-list').addEventListener('click', async () => {
+// Making the list again keeps ticks, edits, added and removed items, so no warning is needed.
+async function buildList() {
   if (plan.entries.length === 0) {
     showMessage('Add at least one recipe first.', 'error');
-    return;
-  }
-  if (plan.shoppingListId && !window.confirm('This replaces your current shopping list for this week (ticks are reset). Continue?')) {
     return;
   }
   try {
@@ -298,6 +308,28 @@ document.querySelector('#generate-list').addEventListener('click', async () => {
   } catch (error) {
     showMessage(error.message, 'error');
   }
+}
+
+document.querySelector('#generate-list').addEventListener('click', buildList);
+document.querySelector('#update-list').addEventListener('click', buildList);
+
+// Deleting needs two clicks (no pop-up): the first click asks, the second one deletes.
+let deleteTimer;
+function resetDeleteButton() {
+  clearTimeout(deleteTimer);
+  deletePlanButton.dataset.armed = '';
+  deletePlanButton.textContent = "Delete this week's plan";
+}
+
+deletePlanButton.addEventListener('click', () => {
+  if (!deletePlanButton.dataset.armed) {
+    deletePlanButton.dataset.armed = 'yes';
+    deletePlanButton.textContent = 'Click again to delete the plan and its list';
+    deleteTimer = setTimeout(resetDeleteButton, 5000);
+    return;
+  }
+  resetDeleteButton();
+  run(() => api(`/mealplans/${plan.id}`, { method: 'DELETE' }), "This week's plan and its shopping list were deleted.");
 });
 
 document.querySelector('#prev-week').addEventListener('click', () => changeWeek(-7));

@@ -1,9 +1,10 @@
 // Frontend settings. Nothing here is secret: every visitor can read this file.
-// On Floci everything runs on this PC, so the API is on localhost:3000.
-const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+// Everything runs on this PC:
+//   - START.bat (Docker): the website is on localhost:8080 and the API on localhost:3000.
+//   - DEPLOY-FLOCI.bat (the doctor's lab setup): the website is in an S3 bucket on Floci and the
+//     API is API Gateway + Lambda on Floci. The deploy script replaces this file in the bucket
+//     with the API Gateway address it just created.
+const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  || window.location.hostname.endsWith('.localhost');
 
-// If the API is ever deployed somewhere else, replace YOUR-API-HOST with its address
-// (and add that address to connect-src in nginx.conf).
-const API_BASE_URL = isLocal
-  ? 'http://localhost:3000/api'
-  : 'https://YOUR-API-HOST/api';
+const API_BASE_URL = 'http://localhost:3000/api';

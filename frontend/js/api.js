@@ -23,7 +23,7 @@ async function api(path, { method = 'GET', body } = {}) {
       body: body === undefined ? undefined : JSON.stringify(body)
     });
   } catch {
-    throw new ApiError(0, 'NETWORK', 'Cannot reach the API. Is it running on port 3000?');
+    throw new ApiError(0, 'NETWORK', 'Cannot reach the API. Is it running? (START.bat or DEPLOY-FLOCI.bat)');
   }
 
   let data = null;

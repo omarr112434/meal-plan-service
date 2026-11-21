@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Same rules as the Content-Security-Policy header nginx sends; this copy also covers the S3 website, which can't send headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:3000 http://localhost:4566 http://*.localhost.floci.io:4566; object-src 'none'; base-uri 'self'; form-action 'self'">
     <title>Recipe Organizer</title>
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css">
@@ -17,6 +19,7 @@
         <nav class="app-nav" aria-label="Main">
             <a href="planner.html">Meal planner</a>
             <a href="shopping-list.html">Shopping list</a>
+            <a href="pantry.html">Pantry</a>
         </nav>
     </div>
 </header>
@@ -24,7 +27,7 @@
 <main class="home">
     <section class="panel">
         <h2>Meal Plan and Shopping List service</h2>
-        <p>Put recipes into the days of the week, then get one shopping list with everything added up.</p>
+        <p>Put recipes into the days of the week, then get one shopping list with everything added up. Tell the pantry what you already have at home and the list only shows what is missing, so nothing gets bought twice.</p>
         <p><a class="button-link" href="planner.html">Open the meal planner</a></p>
         <p class="hint">The recipe library, URL import and login pages come from the other two services and will be linked here once they are merged.</p>
     </section>

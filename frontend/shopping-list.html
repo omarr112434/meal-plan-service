@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Same rules as the Content-Security-Policy header nginx sends; this copy also covers the S3 website, which can't send headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:3000 http://localhost:4566 http://*.localhost.floci.io:4566; object-src 'none'; base-uri 'self'; form-action 'self'">
     <title>Shopping list | Recipe Organizer</title>
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css">
@@ -17,6 +19,7 @@
         <nav class="app-nav" aria-label="Main">
             <a href="planner.html" id="nav-planner">Meal planner</a>
             <a href="shopping-list.html" aria-current="page">Shopping list</a>
+            <a href="pantry.html">Pantry</a>
         </nav>
     </div>
 </header>
@@ -50,8 +53,28 @@
                     <button id="print-list" type="button" class="button-quiet">Print</button>
                 </div>
             </div>
+            <p id="stale-banner" class="banner" hidden>
+                Your plan or your pantry changed after this list was made.
+                <button id="update-list" type="button" class="button-primary">Update the list</button>
+            </p>
+            <ul id="warnings" class="warnings" hidden></ul>
+
             <progress id="progress-bar" max="1" value="0"></progress>
             <ul id="items" class="items"></ul>
+
+            <form id="add-item-form" class="add-item-form">
+                <h3>Add something else</h3>
+                <label>Name <input id="new-name" maxlength="60" required placeholder="e.g. paper towels"></label>
+                <label>Amount <input id="new-quantity" type="number" min="0.01" max="10000" step="0.01"></label>
+                <label>Unit <input id="new-unit" maxlength="15" pattern="[A-Za-z ]*" placeholder="e.g. kg"></label>
+                <button type="submit" class="button-primary">Add to list</button>
+            </form>
+
+            <section id="home-section" class="home-section" hidden>
+                <h3>Already at home</h3>
+                <p class="hint">Your <a href="pantry.html">pantry</a> has enough of these, so you don't need to buy them.</p>
+                <ul id="home-items" class="items"></ul>
+            </section>
         </div>
 
         <p id="message" class="message" aria-live="polite"></p>

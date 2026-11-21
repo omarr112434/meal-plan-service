@@ -1,4 +1,6 @@
-// Shopping list page: tick items off, edit an item (name, amount, unit).
+// Shopping list page: tick items off, edit, add and remove items, and update the list
+// when the plan or the pantry changed. Everything is drawn with createElement and
+// textContent (no innerHTML anywhere on this page), because names are user input.
 const listId = new URLSearchParams(window.location.search).get('id');
 
 const noList = document.querySelector('#no-list');
@@ -7,6 +9,10 @@ const listTitle = document.querySelector('#list-title');
 const listProgress = document.querySelector('#list-progress');
 const progressBar = document.querySelector('#progress-bar');
 const itemsList = document.querySelector('#items');
+const homeSection = document.querySelector('#home-section');
+const homeItems = document.querySelector('#home-items');
+const staleBanner = document.querySelector('#stale-banner');
+const warningsList = document.querySelector('#warnings');
 const message = document.querySelector('#message');
 
 let list = null;
@@ -20,15 +26,15 @@ function showMessage(text, kind = '') {
   message.className = `message ${kind}`.trim();
 }
 
-function amountText(item) {
-  if (item.quantity === null) return 'as needed';
-  const number = String(item.quantity);
-  if (!item.unit) return number;
-  let unit = item.unit;
-  if (item.quantity > 1 && !SYMBOLS.has(unit) && !unit.endsWith('s')) {
-    unit += /(ch|sh)$/.test(unit) ? 'es' : 's';
+function amountText(quantity, unit) {
+  if (quantity === null) return 'as needed';
+  const number = String(quantity);
+  if (!unit) return number;
+  let shown = unit;
+  if (quantity > 1 && !SYMBOLS.has(shown) && !shown.endsWith('s')) {
+    shown += /(ch|sh)$/.test(shown) ? 'es' : 's';
   }
-  return `${number} ${unit}`;
+  return `${number} ${shown}`;
 }
 
 async function loadList() {
@@ -41,6 +47,7 @@ async function loadList() {
     render();
   } catch (error) {
     noList.hidden = false;
+    listView.hidden = true;
     showMessage(error.status === 404 ? 'That shopping list was not found.' : error.message, 'error');
   }
 }
@@ -52,14 +59,36 @@ function render() {
   document.querySelector('#back-to-plan').href = `planner.html?week=${list.weekStart}`;
   document.querySelector('#nav-planner').href = `planner.html?week=${list.weekStart}`;
 
-  const done = list.items.filter((item) => item.checked).length;
-  listProgress.textContent = `${done} of ${list.items.length} ticked off`;
-  progressBar.max = Math.max(list.items.length, 1);
+  staleBanner.hidden = !list.outOfDate;
+  warningsList.hidden = list.warnings.length === 0;
+  warningsList.replaceChildren(...list.warnings.map((warning) => {
+    const line = document.createElement('li');
+    line.textContent = warning.message;
+    return line;
+  }));
+
+  // "covered" items are fully in the pantry: shown in their own section, nothing to buy
+  const toBuy = list.items.filter((item) => !item.covered);
+  const atHome = list.items.filter((item) => item.covered);
+
+  const done = toBuy.filter((item) => item.checked).length;
+  listProgress.textContent = `${done} of ${toBuy.length} ticked off`;
+  progressBar.max = Math.max(toBuy.length, 1);
   progressBar.value = done;
 
   // not-yet-bought items first, then the ticked ones; alphabetical inside each group
-  const sorted = [...list.items].sort((a, b) => Number(a.checked) - Number(b.checked) || a.name.localeCompare(b.name));
+  const sorted = [...toBuy].sort((a, b) => Number(a.checked) - Number(b.checked) || a.name.localeCompare(b.name));
   itemsList.replaceChildren(...sorted.map((item) => (item.id === editingId ? renderEditor(item) : renderItem(item))));
+
+  homeSection.hidden = atHome.length === 0;
+  homeItems.replaceChildren(...atHome.map(renderHomeItem));
+}
+
+function note(text, className = 'item-recipes') {
+  const span = document.createElement('span');
+  span.className = className;
+  span.textContent = text;
+  return span;
 }
 
 function renderItem(item) {
@@ -78,33 +107,63 @@ function renderItem(item) {
 
   const name = document.createElement('span');
   name.className = 'item-name';
-  name.textContent = item.name; // textContent only: names are user input
+  name.textContent = item.name;
 
   const amount = document.createElement('span');
   amount.className = item.quantity === null ? 'item-amount muted' : 'item-amount';
-  amount.textContent = amountText(item);
-
+  amount.textContent = amountText(item.quantity, item.unit);
   label.append(name, amount);
-  if (item.recipes.length > 0) {
-    const used = document.createElement('span');
-    used.className = 'item-recipes';
-    used.textContent = `for ${item.recipes.join(', ')}`;
-    label.append(used);
+
+  if (item.source === 'manual') {
+    label.append(note('added by you'));
+  } else if (item.recipes.length > 0) {
+    label.append(note(`for ${item.recipes.join(', ')}`));
+  }
+  if (item.atHome && item.atHome.quantity !== null && !item.edited) {
+    label.append(note(`${amountText(item.atHome.quantity, item.atHome.unit)} already at home, so less to buy`, 'item-home'));
+  }
+  if (item.edited && item.needed && item.needed.quantity !== item.quantity) {
+    label.append(note(`you changed this; the plan needs ${amountText(item.needed.quantity, item.needed.unit)}`, 'item-home'));
   }
 
-  const edit = document.createElement('button');
-  edit.type = 'button';
-  edit.className = 'button-quiet';
-  edit.textContent = 'Edit';
-  edit.setAttribute('aria-label', `Edit ${item.name}`);
-  edit.addEventListener('click', () => {
-    editingId = item.id;
-    render();
-    document.querySelector('#edit-name').focus();
-  });
+  const tools = document.createElement('span');
+  tools.className = 'item-tools';
+  tools.append(
+    toolButton('Edit', `Edit ${item.name}`, () => {
+      editingId = item.id;
+      render();
+      document.querySelector('#edit-name').focus();
+    }),
+    toolButton('✕', `Remove ${item.name} from the list`, () => removeItem(item))
+  );
 
-  row.append(box, label, edit);
+  row.append(box, label, tools);
   return row;
+}
+
+function renderHomeItem(item) {
+  const row = document.createElement('li');
+  row.className = 'item at-home';
+  const text = document.createElement('span');
+  text.className = 'item-text';
+  const name = document.createElement('span');
+  name.className = 'item-name';
+  name.textContent = item.name;
+  text.append(name);
+  if (item.needed) text.append(note(`the plan needs ${amountText(item.needed.quantity, item.needed.unit)}`));
+  row.append(text);
+  return row;
+}
+
+function toolButton(text, label, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'button-quiet';
+  button.textContent = text;
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.addEventListener('click', onClick);
+  return button;
 }
 
 function renderEditor(item) {
@@ -114,7 +173,6 @@ function renderEditor(item) {
   const form = document.createElement('form');
   form.className = 'item-form';
 
-  // built with createElement and .value (no innerHTML anywhere on this page)
   const field = (labelText, id, attributes, value) => {
     const label = document.createElement('label');
     label.textContent = labelText;
@@ -183,6 +241,53 @@ async function saveItem(item, changes, control, closeEditor = false) {
     }
   }
 }
+
+async function removeItem(item) {
+  try {
+    await api(`/shoppinglists/${list.id}/items/${item.id}`, { method: 'DELETE' });
+    list.items = list.items.filter((entry) => entry.id !== item.id);
+    showMessage(`Removed ${item.name}. It stays off the list even when the list is updated.`, 'ok');
+    render();
+  } catch (error) {
+    showMessage(error.message, 'error');
+  }
+}
+
+document.querySelector('#add-item-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const name = form.querySelector('#new-name').value.trim();
+  const quantityText = form.querySelector('#new-quantity').value.trim();
+  const unit = form.querySelector('#new-unit').value.trim();
+  if (/[<>]/.test(name)) {
+    showMessage('Names can only be plain text (no < or >).', 'error');
+    return;
+  }
+  try {
+    const item = await api(`/shoppinglists/${list.id}/items`, {
+      method: 'POST',
+      body: { name, quantity: quantityText === '' ? null : Number(quantityText), unit }
+    });
+    list.items.push(item);
+    form.reset();
+    showMessage(`Added ${item.name}.`, 'ok');
+    render();
+  } catch (error) {
+    showMessage(error.message, 'error');
+  }
+});
+
+// Making the list again keeps ticks, edits, added and removed items.
+document.querySelector('#update-list').addEventListener('click', async () => {
+  try {
+    showMessage('Updating the list...');
+    list = await api(`/mealplans/${list.mealPlanId}/shoppinglist`, { method: 'POST' });
+    showMessage('The list is up to date. Your ticks and changes were kept.', 'ok');
+    render();
+  } catch (error) {
+    showMessage(error.message, 'error');
+  }
+});
 
 document.querySelector('#print-list').addEventListener('click', () => window.print());
 

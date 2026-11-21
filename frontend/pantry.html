@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Same rules as the Content-Security-Policy header nginx sends; this copy also covers the S3 website, which can't send headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:3000 http://localhost:4566 http://*.localhost.floci.io:4566; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <title>Pantry | Recipe Organizer</title>
+    <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="app-header">
+    <div class="header-row">
+        <div>
+            <h1>Recipe Organizer</h1>
+            <p>What you already have at home, so you don't buy it twice.</p>
+        </div>
+        <nav class="app-nav" aria-label="Main">
+            <a href="planner.html">Meal planner</a>
+            <a href="shopping-list.html" id="nav-list">Shopping list</a>
+            <a href="pantry.html" aria-current="page">Pantry</a>
+        </nav>
+    </div>
+</header>
+
+<section id="login-panel" class="panel login-panel" hidden>
+    <h2>You are not logged in</h2>
+    <p id="login-help"></p>
+    <form id="dev-token-form" hidden>
+        <label for="dev-token">Test token</label>
+        <textarea id="dev-token" rows="4" spellcheck="false"></textarea>
+        <button type="submit" class="button-primary">Use this token</button>
+    </form>
+</section>
+
+<main class="list-layout" data-needs-login hidden>
+    <section class="panel">
+        <h2>My pantry</h2>
+        <p class="hint">When you make or update a shopping list, these amounts are taken off it.
+            Leave the amount empty if you have plenty.</p>
+
+        <form id="add-pantry-form" class="add-item-form">
+            <label>Name <input id="pantry-name" maxlength="60" required placeholder="e.g. rice"></label>
+            <label>Amount <input id="pantry-quantity" type="number" min="0.01" max="10000" step="0.01"></label>
+            <label>Unit <input id="pantry-unit" maxlength="15" pattern="[A-Za-z ]*" placeholder="e.g. kg"></label>
+            <button type="submit" class="button-primary">Add</button>
+        </form>
+
+        <p id="empty-pantry" class="empty-state" hidden>Nothing here yet. Add what you already have at home.</p>
+        <ul id="pantry-items" class="items"></ul>
+        <p id="message" class="message" aria-live="polite"></p>
+    </section>
+</main>
+
+<script src="js/config.js" defer></script>
+<script src="js/session.js" defer></script>
+<script src="js/api.js" defer></script>
+<script src="js/pantry.js" defer></script>
+</body>
+</html>

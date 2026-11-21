@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Same rules as the Content-Security-Policy header nginx sends; this copy also covers the S3 website, which can't send headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:3000 http://localhost:4566 http://*.localhost.floci.io:4566; object-src 'none'; base-uri 'self'; form-action 'self'">
     <title>Meal planner | Recipe Organizer</title>
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css">
@@ -17,6 +19,7 @@
         <nav class="app-nav" aria-label="Main">
             <a href="planner.html" aria-current="page">Meal planner</a>
             <a href="shopping-list.html" id="nav-list">Shopping list</a>
+            <a href="pantry.html">Pantry</a>
         </nav>
     </div>
 </header>
@@ -59,9 +62,15 @@
 
         <div id="week-grid" class="week-grid" hidden></div>
 
+        <p id="stale-banner" class="banner" hidden>
+            Your plan changed after this week's shopping list was made.
+            <button id="update-list" type="button" class="button-primary">Update the list</button>
+        </p>
+
         <div id="plan-actions" class="plan-actions" hidden>
             <button id="generate-list" type="button" class="button-primary">Generate shopping list</button>
             <a id="open-list" class="button-link" href="shopping-list.html" hidden>Open this week's list</a>
+            <button id="delete-plan" type="button" class="button-danger">Delete this week's plan</button>
         </div>
 
         <p id="message" class="message" aria-live="polite"></p>
