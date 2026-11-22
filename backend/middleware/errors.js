@@ -26,7 +26,9 @@ function errorHandler(error, req, res, next) {
     return sendError(res, 409, 'CONFLICT', 'This was changed at the same time somewhere else. Reload and try again.');
   }
 
-  logger.error('unexpected error', { event: 'server_error', error: error.name, detail: error.message });
+  // the request logger writes the one "server_error" line per 500 that the alarm counts;
+  // this line only keeps the details for debugging
+  logger.error('unexpected error', { event: 'unexpected_error', error: error.name, detail: error.message });
   sendError(res, 500, 'INTERNAL_ERROR', 'An unexpected server error occurred.');
 }
 
