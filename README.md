@@ -135,7 +135,7 @@ Never add `-v` to that command unless you want to delete all tables and logs.
 ```bash
 cd backend
 npm install
-npm test               # 90 tests, no Floci needed
+npm test               # 91 tests, no Floci needed
 npm run test:floci     # the 58 API tests against DynamoDB on Floci, and rewrites docs/test-plan.md
 ```
 

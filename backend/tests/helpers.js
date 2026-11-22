@@ -105,4 +105,4 @@ function describeResult(result) {
   return `${result.status}${code}`;
 }
 
-module.exports = { tokenFor, startApi, call, createReport, describeResult, secret };
+module.exports = { tokenFor, makeStore, startApi, call, createReport, describeResult, secret };

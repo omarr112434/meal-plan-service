@@ -38,8 +38,8 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Not needed by the meal plan routes (users and admins both manage their own plans),
-// but here for the admin-only routes of the other services.
+// Used by routes/admin.js (the admin-only cleanup); users and admins both manage their own
+// plans, so the other routes only need requireAuth. The other services can use it for their admin routes.
 function requireRole(role) {
   return (req, res, next) => {
     if (req.user && req.user.role === role) return next();

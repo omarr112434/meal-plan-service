@@ -76,6 +76,7 @@ lines.push(
   '| Script typed into a pantry item name (stored XSS) | T54 |',
   '| Pantry without logging in | T55 |',
   '| A normal user calls an admin-only endpoint (role checked in the backend) | T56 |',
+  '| Two tabs saving at once overwrite each other (lost update) | `tests/storage.test.js` (version check on every save) |',
   ''
 );
 
