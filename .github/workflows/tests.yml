@@ -53,6 +53,14 @@ jobs:
             sleep 2
           done
           echo "Floci did not start" && exit 1
-      - run: npm run test:floci
+      - name: API tests against DynamoDB on Floci (writes docs/test-plan.md)
+        run: npm run test:floci -- "DynamoDB on Floci (floci/floci:latest in GitHub Actions)"
         env:
           TEST_DYNAMODB_ENDPOINT: http://localhost:4566
+      - name: Keep the test plan with the actual results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-plan
+          path: docs/test-plan.md
+          if-no-files-found: ignore
