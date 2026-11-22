@@ -4,3 +4,5 @@ node_modules/
 .DS_Store
 Thumbs.db
 .vscode/
+# made by the Floci deployment (URLs and test tokens)
+infra/floci/deploy/out/

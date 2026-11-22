@@ -4,8 +4,10 @@ const { createApp } = require('./app');
 const { createStore } = require('./storage');
 const { createRecipeSource } = require('./integrations/recipeSource');
 const { createCloudWatchSink } = require('./cloudwatch');
+const { loadSecrets } = require('./secrets');
 
 async function main() {
+  await loadSecrets(config);
   const problems = config.check();
   if (problems.length > 0) {
     problems.forEach((problem) => logger.error('config problem', { problem }));
@@ -16,6 +18,7 @@ async function main() {
     const sink = createCloudWatchSink({
       region: config.aws.region,
       endpoint: config.aws.endpoint,
+      credentials: config.aws.credentials,
       logGroup: config.logGroup
     });
     try {

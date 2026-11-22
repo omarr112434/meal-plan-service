@@ -1,0 +1,21 @@
+{
+  "name": "team07-floci-deploy",
+  "version": "1.0.0",
+  "description": "One-click deployment of the Meal Plan and Shopping List service on Floci (S3 + API Gateway + Lambda + DynamoDB + IAM + Secrets Manager + CloudWatch + SNS)",
+  "private": true,
+  "main": "deploy.js",
+  "scripts": {
+    "deploy": "node deploy.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-apigatewayv2": "^3.1170.0",
+    "@aws-sdk/client-cloudwatch": "^3.1170.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.1170.0",
+    "@aws-sdk/client-iam": "^3.1170.0",
+    "@aws-sdk/client-lambda": "^3.1170.0",
+    "@aws-sdk/client-s3": "^3.1170.0",
+    "@aws-sdk/client-secrets-manager": "^3.1170.0",
+    "@aws-sdk/client-sns": "^3.1170.0",
+    "@aws-sdk/client-sts": "^3.1170.0"
+  }
+}

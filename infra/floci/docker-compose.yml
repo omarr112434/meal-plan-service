@@ -3,6 +3,7 @@
 #
 #   Floci only:              docker compose -f infra/floci/docker-compose.yml up -d
 #   Floci + API + website:   docker compose -f infra/floci/docker-compose.yml --profile app up -d --build
+#   The doctor's lab setup:  DEPLOY-FLOCI.bat (S3 website + API Gateway + Lambda on Floci)
 #   Stop (data is kept):     docker compose -f infra/floci/docker-compose.yml --profile app down
 #
 # Never add -v to "down" unless you want to delete every table and log.
@@ -24,6 +25,8 @@ services:
       FLOCI_STORAGE_MODE: persistent
       FLOCI_STORAGE_PERSISTENT_PATH: /app/data
       FLOCI_SERVICES_DOCKER_NETWORK: team07_net
+      # Lambda functions run as containers on the same network, so they reach Floci as "floci"
+      FLOCI_SERVICES_LAMBDA_DOCKER_NETWORK: team07_net
       # the console has no login, so keep it on this PC too
       FLOCI_SERVICES_UI_BIND_ADDRESS: "127.0.0.1"
 

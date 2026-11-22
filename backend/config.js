@@ -17,7 +17,10 @@ const config = {
   corsOrigins: commaList(env.CORS_ORIGINS || 'http://localhost:8080'),
 
   // Must be the same secret the login (Authentication / identity) part signs tokens with.
+  // Locally it comes from backend/.env. On the Lambda it is read from AWS Secrets Manager
+  // (JWT_SECRET_ID = the secret's name), so it is never in the code or the Lambda settings.
   jwtSecret: env.JWT_SECRET || '',
+  jwtSecretId: env.JWT_SECRET_ID || '',
 
   // memory = nothing to install, data is lost on restart (good for quick tests)
   // dynamodb = DynamoDB tables on Floci (what we deploy)
@@ -29,7 +32,12 @@ const config = {
 
   aws: {
     region: env.AWS_REGION || 'us-east-1',
-    endpoint: env.AWS_ENDPOINT_URL || undefined
+    endpoint: env.AWS_ENDPOINT_URL || undefined,
+    // Only for the Lambda on Floci: the emulator accepts any keys ("test" is not a secret).
+    // On real AWS these stay empty and the SDK uses the Lambda's IAM role instead.
+    credentials: env.FLOCI_ACCESS_KEY_ID
+      ? { accessKeyId: env.FLOCI_ACCESS_KEY_ID, secretAccessKey: env.FLOCI_SECRET_ACCESS_KEY || 'test' }
+      : undefined
   },
   tables: {
     mealPlans: env.MEALPLANS_TABLE || 'MealPlans',

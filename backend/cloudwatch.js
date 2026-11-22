@@ -12,8 +12,8 @@ const {
 const MAX_QUEUE = 5000;
 const MAX_BATCH = 500;
 
-function createCloudWatchSink({ region, endpoint, logGroup, client, intervalMs = 2000 }) {
-  const cloudWatch = client || new CloudWatchLogsClient({ region, endpoint });
+function createCloudWatchSink({ region, endpoint, credentials, logGroup, client, intervalMs = 2000 }) {
+  const cloudWatch = client || new CloudWatchLogsClient({ region, endpoint, ...(credentials ? { credentials } : {}) });
   const streamName = `${os.hostname()}-${new Date().toISOString().slice(0, 10)}`;
   let queue = [];
   let timer = null;
@@ -28,7 +28,12 @@ function createCloudWatchSink({ region, endpoint, logGroup, client, intervalMs =
   }
 
   async function start() {
-    await createIfMissing(new CreateLogGroupCommand({ logGroupName: logGroup }));
+    try {
+      await createIfMissing(new CreateLogGroupCommand({ logGroupName: logGroup }));
+    } catch (error) {
+      // the Lambda's IAM role may not create log groups (the deploy script already made it)
+      if (error.name !== 'AccessDeniedException') throw error;
+    }
     await createIfMissing(new CreateLogStreamCommand({ logGroupName: logGroup, logStreamName: streamName }));
     timer = setInterval(() => flush(), intervalMs);
     timer.unref();

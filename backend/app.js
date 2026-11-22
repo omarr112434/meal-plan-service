@@ -34,6 +34,8 @@ function createApp({ store, recipes }) {
 
   // 3. small JSON bodies only (a plan entry or an item edit is a few hundred bytes)
   app.use(express.json({ limit: '20kb' }));
+  // on the Lambda, lambda.js parses the body and reports problems here (same 400/413 answers)
+  app.use((req, res, next) => next(req.bodyError ? Object.assign(new Error('Bad request body'), req.bodyError) : undefined));
 
   app.use((req, res, next) => {
     res.set('X-Content-Type-Options', 'nosniff');
