@@ -48,6 +48,21 @@ async function getRecipeForUser(userId, recipeId)
 The ownership check in `getRecipeForUser` matters: it is what stops someone putting another user's
 recipe in their plan (threat 6). The adapter is `integrations/libraryRecipes.js`.
 
+**Every recipe needs structured ingredients, also the ones typed in by hand** (Phase 1 feedback:
+"a recipe typed in manually through POST /api/recipes has no structured ingredients, so it adds nothing
+to the shopping list"). If a recipe has no ingredients, the shopping list now warns the user
+("Koshari has no ingredients yet"), but the fix is that `POST/PUT /api/recipes` accept and save
+`ingredients` in the shape of section 3.
+
+**When a recipe is deleted**, take it out of the user's meal plans too:
+
+```js
+await req.app.locals.mealPlans.removeRecipeEverywhere(req.user.id, recipeId); // returns how many entries
+```
+
+If that call is missing, nothing breaks: the planner shows "Recipe no longer in your library" and the
+shopping list skips it with a warning.
+
 Your `GET /api/recipes?q=` endpoint should return `[{ id, title, tags }]` like the stand-in in
 `routes/sampleRecipes.js`. The stand-in is only mounted when `RECIPE_SOURCE=sample`, so it gets
 out of the way automatically.
@@ -68,11 +83,23 @@ ingredient saved on a recipe should look like:
   means a count. Other units (`clove`, `can`, `slice`...) are kept as they are and only added up with
   the same unit. The conversion table is in `services/ingredientMerge.js` if the dictionary needs more.
 
-## 4. Running everything together
+## 4. When an admin deletes a user (Authentication / identity)
+
+Delete that user's meal plan data with the admin-only endpoint (or the same function in-process):
+
+```
+DELETE /api/admin/users/{userId}/mealplan-data     (Admin token; a User gets 403)
+-> 200 { "userId": "...", "deleted": { "mealPlans": 2, "shoppingLists": 1, "pantry": 1 } }
+```
+
+## 5. Running everything together
 
 - One `docker compose -f infra/floci/docker-compose.yml --profile app up -d --build` runs Floci,
   the API and the website. The DynamoDB tables are created by the API at startup; add yours to
   `storage/dynamoStore.js` (`tableDefinitions`) or a similar file.
 - Logs go to CloudWatch Logs group `/recipe-organizer/api` as JSON lines. Use the same `logger.js`
   so your security events show up in the same alarms (`infra/scripts/setup-monitoring.sh`).
-- Run `npm test` before every pull request. All 57 tests must stay green.
+- Run `npm test` before every pull request. All tests must stay green (the GitHub Action runs them too).
+- Deployment like the doctor's lab: `DEPLOY-FLOCI.bat` puts this service on Floci as its own Lambda
+  (`meal-plan-service`) behind its own API Gateway routes. Your services can be added the same way
+  (your own function, routes and least-privilege role) or behind the same HTTP API.

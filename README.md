@@ -14,13 +14,37 @@ The Meal Plan and Shopping List service lets a user:
 - move, copy and remove planned recipes
 - generate one shopping list for the week, with the same ingredients added up
   (2 + 1 onions = 3 onions, 1 l + 300 ml milk = 1.3 l)
-- edit list items and tick them off
+- edit list items, tick them off, add your own items and remove items
+- keep a **pantry** of what is already at home: the list takes it off, so nothing is bought twice
+- update the list after the plan changes: ticks, edits, added and removed items are kept
 
 It runs on **Floci** (a free local copy of AWS) with **DynamoDB** for the data and **CloudWatch Logs**
 for the logs, same setup as the labs. Until the other two services are merged it uses sample recipes
 and test login tokens, so it can be run and demoed on its own (see `docs/integration-notes.md`).
 
-## Easiest way (Windows): double-click
+## The doctor's lab setup on Floci (Windows): double-click DEPLOY-FLOCI.bat
+
+1. Open **Docker Desktop** and wait for **Engine running**.
+2. Double-click **`DEPLOY-FLOCI.bat`**. It starts Floci and deploys this service like the doctor's lab:
+
+   | AWS service (on Floci) | What it does here |
+   |---|---|
+   | **S3** | Hosts the website (bucket `team07-meal-plan-web`) and the Lambda package |
+   | **API Gateway** | HTTP API `meal-plan-http-api` with this service's 8 routes |
+   | **Lambda** | `meal-plan-service`: the same Express app (`backend/lambda.js`) |
+   | **DynamoDB** | Tables `MealPlans`, `ShoppingLists`, `Pantries` |
+   | **IAM** | Role `meal-plan-service-role`: only its own tables, logs and secret |
+   | **Secrets Manager** | `recipe-organizer/jwt-secret` (the Lambda reads it at start; it is not in its settings) |
+   | **CloudWatch** | Log group `/recipe-organizer/api` (14 days), metric filters and 3 alarms |
+   | **SNS** | Topic `meal-plan-alerts` that the alarms send to |
+
+3. The planner opens from S3 with a test login token already copied: click the box, **Ctrl+V**,
+   **Use this token**. The addresses are in `infra/floci/deploy/out/deployment.json`.
+4. Look at everything in the **Floci console**: http://localhost:4566/_floci/ui
+
+Running it again updates everything in place and keeps the data.
+
+## Docker mode (Windows): double-click START.bat
 
 1. Open **Docker Desktop** and wait for **Engine running**.
 2. Double-click **`START.bat`** in this folder. The first time it makes `backend\.env` with a random
