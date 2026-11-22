@@ -4,7 +4,7 @@ cd /d "%~dp0"
 title Recipe Organizer - tests on Floci
 
 echo.
-echo  Running the 40 API tests against DynamoDB on Floci...
+echo  Running the 58 API tests against DynamoDB on Floci...
 echo  (inside Docker, so Node does not need to be installed on this PC)
 echo.
 

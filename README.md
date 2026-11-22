@@ -53,7 +53,7 @@ Running it again updates everything in place and keeps the data.
    **Use this token**.
 3. Double-click **`STOP.bat`** when you're done (data is kept). **`GET-TOKEN.bat`** copies a new
    token if the old one expired (they last 8 hours).
-4. **`TEST-ON-FLOCI.bat`** runs the 40 API tests against DynamoDB on Floci (inside Docker, no Node
+4. **`TEST-ON-FLOCI.bat`** runs the 58 API tests against DynamoDB on Floci (inside Docker, no Node
    needed) and writes the results to `docs/test-plan.md`.
 
 Floci itself is never installed by hand: Docker downloads it the first time `START.bat` runs.
@@ -135,8 +135,8 @@ Never add `-v` to that command unless you want to delete all tables and logs.
 ```bash
 cd backend
 npm install
-npm test               # 57 tests, no Floci needed
-npm run test:floci     # the 40 API tests against DynamoDB on Floci, and rewrites docs/test-plan.md
+npm test               # 90 tests, no Floci needed
+npm run test:floci     # the 58 API tests against DynamoDB on Floci, and rewrites docs/test-plan.md
 ```
 
 `test:floci` makes its own `test-...` tables and deletes them at the end, so it doesn't touch the

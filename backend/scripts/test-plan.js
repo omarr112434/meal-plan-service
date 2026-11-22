@@ -72,6 +72,10 @@ lines.push(
   '| Client setting server-owned fields (id, userId) | T37 |',
   '| Other websites calling the API from a browser (CORS) | T39 |',
   '| Error responses leaking internal details | T21, T40 |',
+  '| Another user deletes my plan, changes my list or my pantry (IDOR) | T51, T52, T53 |',
+  '| Script typed into a pantry item name (stored XSS) | T54 |',
+  '| Pantry without logging in | T55 |',
+  '| A normal user calls an admin-only endpoint (role checked in the backend) | T56 |',
   ''
 );
 
