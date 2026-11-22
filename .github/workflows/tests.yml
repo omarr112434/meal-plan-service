@@ -57,6 +57,9 @@ jobs:
         run: npm run test:floci -- "DynamoDB on Floci (floci/floci:latest in GitHub Actions)"
         env:
           TEST_DYNAMODB_ENDPOINT: http://localhost:4566
+      - name: Show the test plan on the run page
+        if: always()
+        run: test -f ../docs/test-plan.md && cat ../docs/test-plan.md >> "$GITHUB_STEP_SUMMARY" || true
       - name: Keep the test plan with the actual results
         if: always()
         uses: actions/upload-artifact@v4
