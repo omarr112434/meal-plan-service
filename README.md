@@ -2,6 +2,33 @@
 
 Cloud Computing and Cloud Security (26CSCN29H), group project.
 
+## About this repository
+
+This is my individual repository (Omar Hany, 239372). It holds the **Meal Plan and Shopping List**
+service that I built for our team project, with its full commit history.
+
+- Every commit here is mine. The 20 code commits have the same commit ids in the team repository,
+  so they can be checked there; only this README section is new.
+- The history stops on 22 November 2026, just before my teammates' parts were merged. Until then my
+  service ran on its own, with sample recipes and test login tokens standing in for their services.
+  That is why the table below still says "not merged yet".
+- The whole project, with all three services, each member's branch and the pull requests, is in the
+  team repository: https://github.com/omarr112434/recipe-organizer-meal-plan
+
+My later commits are only in the team repository, because I made them on top of the combined code
+after the first merge:
+
+| Commit | Date | What it does |
+|---|---|---|
+| [fb028e5](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/fb028e5) | 22 Nov 2026 | Empty stand-in for the login helper script on the S3 website, so the pages load without a 404 |
+| [95d7b52](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/95d7b52) | 22 Nov 2026 | `SHOW-ON-FLOCI.bat`: prints the deployed API routes, IAM policy and the rest, read live from Floci |
+| [26d3a16](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/26d3a16) | 22 Nov 2026 | `SHOW-ON-FLOCI` also saves its output to a file for the report |
+| [f45f058](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/f45f058) | 22 Nov 2026 | CI prints the Floci test plan in the log as well as on the run page |
+| [dd5aead](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/dd5aead) | 22 Nov 2026 | Test plan: all 58 API tests pass on Floci (recorded by GitHub Actions) |
+| [3f20612](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/3f20612) | 23 Nov 2026 | The deploy uses the sample recipes when the Recipe Library's database is not set |
+
+## The project
+
 | Service | Owner | Status |
 |---|---|---|
 | Recipe Library | Ahmed Shakib | not merged yet |
