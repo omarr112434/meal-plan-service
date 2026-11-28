@@ -26,6 +26,8 @@ after the first merge:
 | [f45f058](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/f45f058) | 22 Nov 2026 | CI prints the Floci test plan in the log as well as on the run page |
 | [dd5aead](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/dd5aead) | 22 Nov 2026 | Test plan: all 58 API tests pass on Floci (recorded by GitHub Actions) |
 | [3f20612](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/3f20612) | 23 Nov 2026 | The deploy uses the sample recipes when the Recipe Library's database is not set |
+| [3c4ae1f](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/3c4ae1f) | 28 Nov 2026 | `backend/.env.example` lists every setting the API reads, and which ones the deploy sets by itself |
+| [9f2b25d](https://github.com/omarr112434/recipe-organizer-meal-plan/commit/9f2b25d) | 28 Nov 2026 | README: what you need to run it (settings and secrets) |
 
 ## The project
 
